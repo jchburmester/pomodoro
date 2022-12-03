@@ -55,6 +55,7 @@ class Block(layers.Layer):
         if type == 'convolutional':
             self.shortcut = layers.Conv2D(output_channels, (1, 1), strides=identity_strides, padding='same')
 
+    @tf.function(jit_compile=True)
     def call(self, input):
 
         x = self.conv1(input)
@@ -109,6 +110,7 @@ class ResNet50(tf.keras.Model):
         self.avgpool = layers.GlobalAveragePooling2D()
         self.fc = layers.Dense(num_classes, activation='softmax')
 
+    @tf.function(jit_compile=True)
     def call(self, input):
         x = self.conv1(input)
         x = self.bn(x)
