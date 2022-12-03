@@ -63,4 +63,3 @@ model = tf.keras.Sequential([
     preprocessing_layer,
     model
 ])
-
