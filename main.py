@@ -63,3 +63,20 @@ model = tf.keras.Sequential([
     preprocessing_layer,
     model
 ])
+
+# Data loading
+tf.keras.utils.image_dataset_from_directory(
+    'data/',
+    labels='inferred',
+    label_mode='categorical',
+    class_names=None,
+    color_mode='rgb',
+    batch_size=32,
+    image_size=(224, 224),
+    shuffle=True,
+    seed=None,
+    validation_split=None,
+    subset=None,
+    interpolation='bilinear',
+    follow_links=False,
+)
