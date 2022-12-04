@@ -43,21 +43,37 @@ class Preprocessing(tf.keras.layers.Layer):
                 print("Make sure that input images are in RGB format.")
 
         # data augmentation
+        self.possible_augmentation_steps = {
+            "Random Flipping" : layer.RandomFlip(seed=self.seed_val), 
+            "Random Rotation" : layer.RandomRotation(0.3, seed=self.seed_val), 
+            "Random Zoom" : layer.RandomZoom(0.2, seed=self.seed_val),
+            "Random Contrast" : layer.RandomContrast(0.3, seed=self.seed_val), 
+            "Random Translation" : layer.RandomTranslation(0.2,0.2, seed=self.seed_val), 
+            "Radom Height Shift" : layer.RandomHeight(0.2, seed=self.seed_val), 
+            "Random Width Shift" : layer.RandomWidth(0.2, seed=self.seed_val)}
+
         # if augmentation should be applied, randomly select 3 augmentation methods
-        self.possible_augmentation_steps = [layer.RandomFlip(seed=self.seed_val), layer.RandomRotation(0.3, seed=self.seed_val), layer.RandomZoom(0.2, seed=self.seed_val),
-                                layer.RandomContrast(0.3, seed=self.seed_val), layer.RandomTranslation(0.2,0.2, seed=self.seed_val), layer.RandomHeight(0.2, seed=self.seed_val), 
-                                layer.RandomWidth(0.2, seed=self.seed_val)]
-
         if(augment):
+            self.aug_list = list(self.possible_augmentation_steps.items())
             self.seed_val
-            self.augmentation_subset = sample(self.augmentation_steps, 3)
+            self.augmentation_subset = sample(self.aug_list, 3)
 
+            # to collect names of applied methods
+            self.aug_names = []
+
+            # first part of each item is name, second part method
             for i in self.augmentation_subset:
-                self.prepro_layers.append(i)
+                self.aug_names.append(i[0])
+                self.prepro_layers.append(i[1])
+            
+            print("Applied augmentation steps: ")
+            print(*self.aug_names, sep=", ")
 
         # placeholder layer if no preprocessing layer is added
         if(len(self.prepro_layers)==0):
             self.prepro_layers.append(layer.Reshape(data_shape))
+
+            print("No preprocessing steps applied.")
 
 
 
