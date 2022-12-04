@@ -19,6 +19,8 @@ class Preprocessing(tf.keras.Layer):
                 if augmentation should be applied.
         """
         super(Preprocessing, self).__init__()
+        
+        self.seed_val = seed(22)
 
         # collects preprocessing steps
         self.prepro_layers = []
@@ -37,12 +39,12 @@ class Preprocessing(tf.keras.Layer):
 
         # data augmentation
         # if augmentation should be applied, randomly select 3 augmentation methods
-        self.possible_augmentation_steps = [layer.RandomFlip(seed=10), layer.RandomRotation(0.3, seed=9), layer.RandomZoom(0.2, seed=8),
-                                layer.RandomContrast(0.3, seed=7), layer.RandomTranslation(0.2,0.2, seed=6), layer.RandomHeight(0.2, seed=5), 
-                                layer.RandomWidth(0.2, seed=4)]
+        self.possible_augmentation_steps = [layer.RandomFlip(seed=self.seed_val), layer.RandomRotation(0.3, seed=self.seed_val), layer.RandomZoom(0.2, seed=self.seed_val),
+                                layer.RandomContrast(0.3, seed=self.seed_val), layer.RandomTranslation(0.2,0.2, seed=self.seed_val), layer.RandomHeight(0.2, seed=self.seed_val), 
+                                layer.RandomWidth(0.2, seed=self.seed_val)]
 
         if(augment):
-            seed(22)
+            self.seed_val
             self.augmentation_subset = sample(self.augmentation_steps, 3)
 
             for i in self.augmentation_subset:
