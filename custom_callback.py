@@ -1,4 +1,7 @@
-
+""" 
+File for the custom Callback that saves the results + timestamps to a CSV file
+Pomodoro, 4.12.2022
+"""
 import tensorflow as tf
 import csv
 import os

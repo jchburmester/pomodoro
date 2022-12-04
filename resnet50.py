@@ -1,5 +1,5 @@
 """ 
-The ResNet50 class 
+The ResNet50 model class 
 Pomodoro, 2.12.2022
 """
 

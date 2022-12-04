@@ -64,15 +64,18 @@ data = tf.keras.utils.image_dataset_from_directory(
     interpolation='bilinear',
 )
 
+# Convert to float32
+data = data.map(lambda x, y: (tf.cast(x, tf.float32), y))
+
 # Split the data according the argument partitioning, either 90/5/5 or 70/15/15
 if args.new_partitioning:
-    train_size = data.take(0.7)
-    val_size = data.skip(0.7).take(0.15)
-    test_size = data.skip(0.85).take(0.15)
-else:
     train_size = data.take(0.9)
     val_size = data.skip(0.9).take(0.05)
     test_size = data.skip(0.95).take(0.05)
+else:
+    train_size = data.take(0.7)
+    val_size = data.skip(0.7).take(0.15)
+    test_size = data.skip(0.85).take(0.15)
 
 # Initialize preprocessing
 preprocessing_layer = Preprocessing(SEED, 

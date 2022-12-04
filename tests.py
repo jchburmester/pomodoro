@@ -1,3 +1,7 @@
+""" 
+Testing file for the new callback
+Pomodoro, 4.12.2022
+"""
 from resnet50 import ResNet50
 from custom_callback import CSVLogger
 import tensorflow as tf
