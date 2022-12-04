@@ -3,14 +3,16 @@ import tensorflow.keras.layers as layer
 from random import sample
 from random import seed
 
-class Preprocessing(tf.keras.Layer):
+class Preprocessing(tf.keras.layers.Layer):
 
-    def __init__(self, normalize=False, scale=False, augment=False):
+    def __init__(self, data_shape=(256,256,3), normalize=False, scale=False, augment=False):
         """
         Constructor.
 
         Parameters:
         ----------
+            data_shape : tuple
+                shape of input data. Defaults to standard RGB image shape.
             normalize : bool
                 if normalization should be applied.
             scale : bool
@@ -35,7 +37,10 @@ class Preprocessing(tf.keras.Layer):
 
         # data scaling. Scales to range [0,1]
         elif(scale):
-            self.prepro_layers.append(layer.Rescaling(scale=1./255))
+            if(data_shape[-1]==3 and len(data_shape)==3):
+                self.prepro_layers.append(layer.Rescaling(scale=1./255))
+            else:
+                print("Make sure that input images are in RGB format.")
 
         # data augmentation
         # if augmentation should be applied, randomly select 3 augmentation methods
@@ -52,7 +57,7 @@ class Preprocessing(tf.keras.Layer):
 
         # placeholder layer if no preprocessing layer is added
         if(len(self.prepro_layers)==0):
-            self.prepro_layers.append(layer.Reshape((256,256,3)))
+            self.prepro_layers.append(layer.Reshape(data_shape))
 
 
 
