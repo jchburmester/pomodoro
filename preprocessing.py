@@ -1,3 +1,7 @@
+""" 
+Main file for preprocessing
+Pomodoro, 4.12.2022
+"""
 import tensorflow as tf
 import tensorflow.keras.layers as layer
 from random import sample
@@ -5,7 +9,7 @@ from random import seed
 
 class Preprocessing(tf.keras.layers.Layer):
 
-    def __init__(self, data_shape=(256,256,3), normalize=False, scale=False, augment=False):
+    def __init__(self, seed, data_shape=(256,256,3), augment=False, normalize=False, scale=False):
         """
         Constructor.
 
@@ -22,7 +26,7 @@ class Preprocessing(tf.keras.layers.Layer):
         """
         super(Preprocessing, self).__init__()
         
-        self.seed_val = seed(22)
+        self.seed_val = seed
 
         # collects preprocessing steps
         self.prepro_layers = []
