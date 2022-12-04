@@ -1,5 +1,5 @@
 """ 
-The ResNet50 class 
+The ResNet50 model class 
 Pomodoro, 2.12.2022
 """
 
@@ -55,7 +55,7 @@ class Block(layers.Layer):
         if type == 'convolutional':
             self.shortcut = layers.Conv2D(output_channels, (1, 1), strides=identity_strides, padding='same')
 
-    @tf.function(jit_compile=True)
+    @tf.function()
     def call(self, input):
 
         x = self.conv1(input)
@@ -81,7 +81,7 @@ class Block(layers.Layer):
 
 
 class ResNet50(tf.keras.Model):
-    def __init__(self, num_classes, input_shape):
+    def __init__(self, num_classes, input_shape, jit_compilation=False):
         super(ResNet50, self).__init__()
         self.conv1 = layers.Conv2D(input_shape=input_shape, filters=64, kernel_size=(7, 7), strides=2, padding='same')
         self.bn = layers.BatchNormalization()
@@ -110,7 +110,7 @@ class ResNet50(tf.keras.Model):
         self.avgpool = layers.GlobalAveragePooling2D()
         self.fc = layers.Dense(num_classes, activation='softmax')
 
-    @tf.function(jit_compile=True)
+    @tf.function()
     def call(self, input):
         x = self.conv1(input)
         x = self.bn(x)
