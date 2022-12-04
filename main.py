@@ -43,6 +43,13 @@ parser.add_argument('--tf_lite_conversion', type=bool, default=False, help='TF L
 # Parse the arguments
 args = parser.parse_args()
 
+# Global quantization (float32, float64, float16... )
+# Can also be the string 'mixed_float16' or 'mixed_bfloat16', 
+# which causes the compute dtype to be float16 or bfloat16 and the variable dtype to be float32.
+if args.global_quantization:
+    tf.keras.mixed_precision.set_global_policy('mixed_float16')
+    print('Global quantization is enabled')
+
 # Data loading
 data = tf.keras.utils.image_dataset_from_directory(
     DIR,
@@ -50,7 +57,7 @@ data = tf.keras.utils.image_dataset_from_directory(
     label_mode='categorical',
     class_names=None,
     color_mode='rgb',
-    batch_size=32,
+    batch_size=args.batch_size,
     image_size=(256, 256),
     shuffle=True,
     seed=SEED,
@@ -76,14 +83,8 @@ preprocessing_layer = Preprocessing(SEED,
 # Initialize model
 model = ResNet50(
     len(os.listdir('data/train')),
-    args.optimizer,
-    args.batch_size,
-    args.learning_rate,
-    args.momentum,
-    args.weight_decay,
-    args.global_quantization,
-    args.model_quantization,
-    args.jit_compilation,
+    input_shape=(256, 256, 3),
+    jit_compilation=args.jit_compilation,
 )
 
 # Initialize model, stack the preprocessing layer and the model
@@ -91,3 +92,52 @@ combined_model = tf.keras.Sequential([
     preprocessing_layer,
     model
 ])
+
+# Pick optimizer
+if args.optimizer == 'SGD':
+    optimizer = tf.keras.optimizers.SGD(
+        learning_rate=args.learning_rate,
+        momentum=args.momentum,
+        weight_decay=args.weight_decay,
+        nesterov=True,
+    )
+elif args.optimizer == 'Adam':
+    optimizer = tf.keras.optimizers.Adam(
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+    )
+elif args.optimizer == 'RMSprop':
+    optimizer = tf.keras.optimizers.RMSprop(
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+    )
+
+combined_model.compile(
+    optimizer=optimizer,
+    loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+    metrics=['accuracy']
+)
+
+# Train the model
+combined_model.fit(
+    train_size,
+    validation_data=val_size,
+    epochs=10,
+)
+
+# Quantize the model
+if args.global_quantization:
+    converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    tflite_quant_model = converter.convert()
+    open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
+
+# Quantize the model
+if args.model_quantization:
+    converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    converter.inference_input_type = tf.uint8
+    converter.inference_output_type = tf.uint8
+    tflite_quant_model = converter.convert()
+    open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)

@@ -42,7 +42,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # [1x1, 2048]
 
 class Block(layers.Layer):
-    def __init__(self, input_channels, output_channels, type, identity_strides=1, jit=False):
+    def __init__(self, input_channels, output_channels, type, identity_strides=1):
         super(Block, self).__init__()
         self.conv1 = layers.Conv2D(input_channels, (1, 1), strides=identity_strides)
         self.conv2 = layers.Conv2D(input_channels, (3, 3), padding='same')
@@ -54,8 +54,6 @@ class Block(layers.Layer):
 
         if type == 'convolutional':
             self.shortcut = layers.Conv2D(output_channels, (1, 1), strides=identity_strides, padding='same')
-
-        self.jit = jit
 
     @tf.function()
     def call(self, input):
@@ -83,7 +81,7 @@ class Block(layers.Layer):
 
 
 class ResNet50(tf.keras.Model):
-    def __init__(self, num_classes, input_shape):
+    def __init__(self, num_classes, input_shape, jit_compilation=False):
         super(ResNet50, self).__init__()
         self.conv1 = layers.Conv2D(input_shape=input_shape, filters=64, kernel_size=(7, 7), strides=2, padding='same')
         self.bn = layers.BatchNormalization()
