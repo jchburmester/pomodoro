@@ -42,7 +42,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # [1x1, 2048]
 
 class Block(layers.Layer):
-    def __init__(self, input_channels, output_channels, type, identity_strides=1):
+    def __init__(self, input_channels, output_channels, type, identity_strides=1, jit=False):
         super(Block, self).__init__()
         self.conv1 = layers.Conv2D(input_channels, (1, 1), strides=identity_strides)
         self.conv2 = layers.Conv2D(input_channels, (3, 3), padding='same')
@@ -55,7 +55,9 @@ class Block(layers.Layer):
         if type == 'convolutional':
             self.shortcut = layers.Conv2D(output_channels, (1, 1), strides=identity_strides, padding='same')
 
-    @tf.function(jit_compile=True)
+        self.jit = jit
+
+    @tf.function()
     def call(self, input):
 
         x = self.conv1(input)
@@ -110,7 +112,7 @@ class ResNet50(tf.keras.Model):
         self.avgpool = layers.GlobalAveragePooling2D()
         self.fc = layers.Dense(num_classes, activation='softmax')
 
-    @tf.function(jit_compile=True)
+    @tf.function()
     def call(self, input):
         x = self.conv1(input)
         x = self.bn(x)
