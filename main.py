@@ -14,6 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from preprocessing import Preprocessing
 from resnet50 import ResNet50
+from custom_callback import CSVLogger
 
 # Start a parser with the arguments
 parser = argparse.ArgumentParser(description='ResNet50')
@@ -23,6 +24,7 @@ parser.add_argument('--augmentation', type=bool, default=False, help='Augmentati
 parser.add_argument('--normalization', type=bool, default=False, help='Normalization methods')
 parser.add_argument('--scaling', type=bool, default=False, help='Scaling methods')
 parser.add_argument('--new_partitioning', type=bool, default=False, help='Data splitting methods')
+parser.add_argument('--higher_precision_casting', type=bool, default=False, help='Casting data to float64')
 
 # Training arguments
 parser.add_argument('--optimizer', type=str, default='SGD', help='name of optimizer') # Others: Adam, RMSprop
@@ -65,20 +67,22 @@ data = tf.keras.utils.image_dataset_from_directory(
 )
 
 # Convert to float32
-data = data.map(lambda x, y: (tf.cast(x, tf.float32), y))
+if args.higher_precision_casting:
+    data = data.map(lambda x, y: (tf.cast(x, tf.float64), y))
 
 # Split the data according the argument partitioning, either 90/5/5 or 70/15/15
 if args.new_partitioning:
-    train_size = data.take(0.9)
-    val_size = data.skip(0.9).take(0.05)
-    test_size = data.skip(0.95).take(0.05)
+    train_size = data.take(int(0.9 * len(data)))
+    val_size = data.skip(int(0.9 * len(data))).take(int(0.05 * len(data)))
+    test_size = data.skip(int(0.95 * len(data))).take(int(0.05 * len(data)))
 else:
-    train_size = data.take(0.7)
-    val_size = data.skip(0.7).take(0.15)
-    test_size = data.skip(0.85).take(0.15)
+    train_size = data.take(int(0.01 * len(data)))
+    val_size = data.skip(int(0.7 * len(data))).take(int(0.15 * len(data)))
+    test_size = data.skip(int(0.85 * len(data))).take(int(0.15 * len(data)))
 
 # Initialize preprocessing
 preprocessing_layer = Preprocessing(SEED, 
+                                    (256,256,3),
                                     args.augmentation, 
                                     args.normalization, 
                                     args.scaling)
@@ -101,7 +105,6 @@ if args.optimizer == 'SGD':
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=args.learning_rate,
         momentum=args.momentum,
-        weight_decay=args.weight_decay,
         nesterov=True,
     )
 elif args.optimizer == 'Adam':
@@ -117,7 +120,7 @@ elif args.optimizer == 'RMSprop':
 
 combined_model.compile(
     optimizer=optimizer,
-    loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+    loss=tf.keras.losses.CategoricalCrossentropy(),
     metrics=['accuracy']
 )
 
@@ -125,7 +128,7 @@ combined_model.compile(
 combined_model.fit(
     train_size,
     validation_data=val_size,
-    epochs=10,
+    epochs=1
 )
 
 # Quantize the model
