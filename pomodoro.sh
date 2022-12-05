@@ -6,8 +6,8 @@
 # little energy consumption with high training performance.
 
 # argument name array
-declare -a techniques=('augmentation' 'normalization' '90/5/5-partitioning' 'optimizer' 'batch_size'
-'learning_rate' 'momentum' 'weight_decay' 'global quantization' 'local quantization' 'jit_compilation')
+declare -a techniques=('augmentation True' 'normalization True' 'new_partitioning True' 'optimizer SGD' 'batch_size 64'
+'learning_rate' 'momentum' 'weight_decay' 'global_quantization' 'model_quantization True' 'jit_compilation')
 
 # decision dictionary with booleans as values and techniques as keys
 declare -A decision_dictionary
@@ -59,10 +59,11 @@ do
     #echo "Test" >> GPU_resnet_'$args'.csv
 
     # let reader sleep for a while to see a clear turning on of the GPU later
-    sleep 31
+    # sleep 31
 
     # run the training script with the filtered techniques
     echo "Running ResNet-50 with the following techniques: $args"
-    python main.py $args
+    echo "python main.py$args"
+    python main.py$args
 
 done
