@@ -63,7 +63,6 @@ do
 
     # run the training script with the filtered techniques
     echo "Running ResNet-50 with the following techniques: $args"
-    echo "python main.py$args"
     python main.py$args
 
 done

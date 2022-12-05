@@ -1,5 +1,12 @@
 # Pomodoro
 
+TODO: 
+
+* In main.py, convert all current args to a string and pass it to the CSV callback. Because this gets overwritten each run
+* Finetune the args in the shell file so that it fits the args in main.py
+* Fix the spacing of the first arg in the shell, I have to start it using "python main.py$arg" instead of "python main.py $arg"
+* Fix tflite (model quantization)
+
 ## Project description
 
 Energy consumption vs. training performance
