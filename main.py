@@ -76,7 +76,7 @@ if args.new_partitioning:
     val_size = data.skip(int(0.9 * len(data))).take(int(0.05 * len(data)))
     test_size = data.skip(int(0.95 * len(data))).take(int(0.05 * len(data)))
 else:
-    train_size = data.take(int(0.01 * len(data)))
+    train_size = data.take(int(0.07 * len(data)))
     val_size = data.skip(int(0.7 * len(data))).take(int(0.15 * len(data)))
     test_size = data.skip(int(0.85 * len(data))).take(int(0.15 * len(data)))
 
