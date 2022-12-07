@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy as np
 import argparse
 import os
+import wandb
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -121,7 +122,8 @@ elif args.optimizer == 'RMSprop':
 combined_model.compile(
     optimizer=optimizer,
     loss=tf.keras.losses.CategoricalCrossentropy(),
-    metrics=['accuracy']
+    metrics=['accuracy'],
+    jit_compile=args.jit_compilation,
 )
 
 # Train the model
