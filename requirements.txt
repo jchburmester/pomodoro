@@ -1,0 +1,8 @@
+tensorflow
+csv
+os
+keras
+collections
+numpy
+datetime
+argparse
