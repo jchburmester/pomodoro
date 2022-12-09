@@ -53,7 +53,7 @@ class Preprocessing(tf.keras.layers.Layer):
             "Random Zoom" : layer.RandomZoom(0.2, seed=self.seed_val),
             "Random Contrast" : layer.RandomContrast(0.3, seed=self.seed_val), 
             "Random Translation" : layer.RandomTranslation(0.2,0.2, seed=self.seed_val), 
-            "Radom Height Shift" : layer.RandomHeight(0.2, seed=self.seed_val), 
+            "Random Height Shift" : layer.RandomHeight(0.2, seed=self.seed_val), 
             "Random Width Shift" : layer.RandomWidth(0.2, seed=self.seed_val)}
 
         # if augmentation should be applied, randomly select 3 augmentation methods

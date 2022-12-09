@@ -9,7 +9,7 @@ import tensorflow as tf
 import numpy as np
 import argparse
 import os
-import wandb
+#import wandb
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -21,21 +21,21 @@ from custom_callback import CSVLogger
 parser = argparse.ArgumentParser(description='ResNet50')
 
 # Preprocessing arguments
-parser.add_argument('--augmentation', type=bool, default=False, help='Augmentation methods')
-parser.add_argument('--normalization', type=bool, default=False, help='Normalization methods')
-parser.add_argument('--scaling', type=bool, default=False, help='Scaling methods')
-parser.add_argument('--new_partitioning', type=bool, default=False, help='Data splitting methods')
-parser.add_argument('--higher_precision_casting', type=bool, default=False, help='Casting data to float64')
+parser.add_argument('--augmentation', action='store_true', help='Augmentation methods')
+parser.add_argument('--normalization', action='store true', help='Normalization methods')
+parser.add_argument('--scaling', action='store true', help='Scaling methods')
+parser.add_argument('--new_partitioning', action='store true', help='Data splitting methods')
+parser.add_argument('--higher_precision_casting', action='store true', help='Casting data to float64')
 
 # Training arguments
-parser.add_argument('--optimizer', type=str, default='SGD', help='name of optimizer') # Others: Adam, RMSprop
-parser.add_argument('--batch_size', type=int, default=32, help='Batch size') # Others: 64, 128
-parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate') # Others: 0.01, 0.0001
-parser.add_argument('--momentum', type=float, default=0.9, help='Momentum') # Others: 0.5, 0.99
-parser.add_argument('--weight_decay', type=float, default=0.0001, help='Weight decay') # Others: 0.001, 0.00001
-parser.add_argument('--global_quantization', type=bool, default=False, help='Global quantization') # Others: True
-parser.add_argument('--model_quantization', type=bool, default=False, help='Local quantization') # Others: True
-parser.add_argument('--jit_compilation', type=bool, default=False, help='JIT compilation') # Others: True
+parser.add_argument('--optimizer', action='store true', help='name of optimizer') # Default: SGD, others: Adam, RMSprop
+parser.add_argument('--batch_size', action='store true', help='Batch size') # Default: 32, others: 64, 128
+parser.add_argument('--learning_rate', action='store true', help='Learning rate') # Default: 0.001, others: 0.01, 0.0001
+parser.add_argument('--momentum', action='store true', help='Momentum') # Default: 0.9, others: 0.5, 0.99
+parser.add_argument('--weight_decay', action='store true', help='Weight decay') # Default: 0.0001, others: 0.001, 0.00001
+parser.add_argument('--global_quantization', action='store true', help='Global quantization')
+parser.add_argument('--model_quantization', action='store true', help='Local quantization')
+parser.add_argument('--jit_compilation', action='store true', help='JIT compilation')
 
 # Postprocessing (inferece) arguments
 parser.add_argument('--post_quantization', type=bool, default=False, help='Post traingin quantization')
@@ -45,6 +45,9 @@ parser.add_argument('--tf_lite_conversion', type=bool, default=False, help='TF L
 
 # Parse the arguments
 args = parser.parse_args()
+print(args)
+
+learning_rate_v = 0.001 # Default learning rate
 
 # Global quantization (float32, float64, float16... )
 # Can also be the string 'mixed_float16' or 'mixed_bfloat16', 
@@ -101,21 +104,25 @@ combined_model = tf.keras.Sequential([
     model
 ])
 
+# Get learning rate
+if args.learning_rate:
+    learning_rate_v = 0.01
+
 # Pick optimizer
-if args.optimizer == 'SGD':
+if args.optimizer:
     optimizer = tf.keras.optimizers.SGD(
-        learning_rate=args.learning_rate,
+        learning_rate=learning_rate_v,
         momentum=args.momentum,
         nesterov=True,
     )
-elif args.optimizer == 'Adam':
+elif args.optimizer == 'Adam': # not needed at the moment
     optimizer = tf.keras.optimizers.Adam(
-        learning_rate=args.learning_rate,
+        learning_rate=learning_rate_v,
         weight_decay=args.weight_decay,
     )
-elif args.optimizer == 'RMSprop':
+elif args.optimizer == 'RMSprop': # not needed at the moment
     optimizer = tf.keras.optimizers.RMSprop(
-        learning_rate=args.learning_rate,
+        learning_rate=learning_rate_v,
         weight_decay=args.weight_decay,
     )
 
