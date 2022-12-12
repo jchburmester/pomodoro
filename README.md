@@ -7,6 +7,9 @@ TODO:
 * Fix the spacing of the first arg in the shell, I have to start it using "python main.py$arg" instead of "python main.py $arg"
 * Fix tflite (model quantization)
 
+(later) 
+* Make appendix with other models
+
 ## Project description
 
 Energy consumption vs. training performance
