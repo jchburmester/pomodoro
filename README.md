@@ -9,6 +9,7 @@ TODO:
 
 (later) 
 * Make appendix with other models
+* Introduce a energy consumption (correlated with number of epochs) / (val) accuracy / inference time quotient or function to be used to measure trained models (but check literature first!)
 
 ## Project description
 
