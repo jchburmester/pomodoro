@@ -7,6 +7,11 @@ TODO:
 * Fix the spacing of the first arg in the shell, I have to start it using "python main.py$arg" instead of "python main.py $arg"
 * Fix tflite (model quantization)
 
+* Extend custom callback to use nvidia-ml-py3 instead of nvidia-smi in shell. This way the power usage is linked directly to the training and can be exported to the csv file directly (better automation). 
+  * Use nvidia-ml-py3 or the wrapper py3nvml (https://py3nvml.readthedocs.io/en/latest/)
+  * Information on metrics (like GPU usage, etc.) on https://lambdalabs.com/blog/weights-and-bias-gpu-cpu-utilization
+      * This is the same metric that WANDB uses to track training runs
+
 (later) 
 * Make appendix with other models
 * Introduce a energy consumption (correlated with number of epochs) / (val) accuracy / inference time quotient or function to be used to measure trained models (but check literature first!)
