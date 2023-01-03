@@ -10,6 +10,15 @@ TODO:
   * Use nvidia-ml-py3 or the wrapper py3nvml (https://py3nvml.readthedocs.io/en/latest/)
   * Information on metrics (like GPU usage, etc.) on https://lambdalabs.com/blog/weights-and-bias-gpu-cpu-utilization
       * This is the same metric that WANDB uses to track training runs
+      
+!!! New comparison metrics
+- AdamW optimizer (used in almost all SOTA models nowadays, ConvNeXt 2 (https://arxiv.org/pdf/2301.00808.pdf)) available in tensorflow addons
+- base learning rate (1.5e-4, 2e-4, 8e-4, 6.25e-3 (> from small to large model size, see convnext2 appendix) 
+- weight decay (0.05)
+- optimizer momentum (β1 , β2 =0.9, 0.95,    β1 , β2 =0.9, 0.999 (> from small to large model size, see convnext2 appendix))
+- learning rate schedule (cosine decay, etc. (look for more))
+
+
 
 (later) 
 * Make appendix with other models
