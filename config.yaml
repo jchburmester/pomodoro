@@ -1,0 +1,16 @@
+sweep_configuration = {
+  'method': 'random', # other options: grid, bayes
+  'name': 'sweep',
+  'metric': {'goal': 'minimize',
+             'name': 'loss' # if we choose other metrics, we have to log the variable in our python script
+             },
+  'parameters':
+      {
+        'batch_size': {'values': [16, 32, 64]},
+        'epochs': {'values': [5, 10, 15]},
+        'lr': {'values': [1.5e-4, 2.0e-4, 8.0e-4, 6.25e-3]}, # explain in paper why we used convnext training methods
+        # 'lr_schedule': {'values': ['cosine_decay', 'step_decay', 'constant', 'time_based']},
+        'optimizer': {'values': ['SGD', 'Adam', AdamW', 'RMSProp']},
+        'optimizer_momentum' {'values': [[0.9, 0.95], [0.9, 0.999]]} # main file has to accept list
+     }
+}
