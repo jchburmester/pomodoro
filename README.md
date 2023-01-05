@@ -18,6 +18,9 @@ TODO:
 - optimizer momentum (β1 , β2 =0.9, 0.95,    β1 , β2 =0.9, 0.999 (> from small to large model size, see convnext2 appendix))
 - learning rate schedule (cosine decay, etc. (look for more))
 
+(new 5.01.2023): 
+- Add some function in the callback that takes all the weights (kernels) like in the convnext2 paper and evaluates if they are evenly populated == meaning the model is good.
+
 
 
 (later) 
