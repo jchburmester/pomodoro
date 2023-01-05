@@ -1,3 +1,4 @@
+# Step 1: configure sweep
 sweep_configuration = {
   'method': 'random', # other options: grid, bayes
   'name': 'sweep',
@@ -14,3 +15,14 @@ sweep_configuration = {
         'optimizer_momentum' {'values': [[0.9, 0.95], [0.9, 0.999]]} # main file has to accept list
      }
 }
+
+# TO BE COPIED INTO PYTHON FILE :::
+
+# Step 2: initialize sweep
+# import wandp
+# sweep_id = wandb.sweep(sweep=sweep_configuration, project="pomodoro")
+
+# Step 3: start sweep agents
+# wandb.agent(sweep_id=sweep_id, function=function_name) # sweep_id is returned after sweep is initialized
+
+# https://docs.wandb.ai/guides/sweeps/add-w-and-b-to-your-code
