@@ -1,6 +1,26 @@
 # Pomodoro
+NEW TODO's:
+1. Include pre- and postprocessing in sweeps? if yes, change training code
+2. Include energy consumption metric in sweep config?
+3. Keep track of the things / work we have done (to hand a summary to Leon in the end). Marlena has started writing notes in our google doc.
+4. Include steps 2 + 3 of sweep in python file (pre-written in config.yaml)
+5. Loss or accuracy as metric?
+6. manual training for edge cases (all parameters switched on/off). or build this into sweep pipeline?
+7. do we want all parameters to be switched on during all runs? or have some switched off entirely?
 
-TODO: 
+      
+!!! New comparison metrics
+- AdamW optimizer (used in almost all SOTA models nowadays, ConvNeXt 2 (https://arxiv.org/pdf/2301.00808.pdf)) available in tensorflow addons
+- base learning rate (1.5e-4, 2e-4, 8e-4, 6.25e-3 (> from small to large model size, see convnext2 appendix) 
+- weight decay (0.05)
+- optimizer momentum (β1 , β2 =0.9, 0.95,    β1 , β2 =0.9, 0.999 (> from small to large model size, see convnext2 appendix))
+- learning rate schedule (cosine decay, etc. (look for more))
+
+(later) 
+* Make appendix with other models
+* Introduce a energy consumption (correlated with number of epochs) / (val) accuracy / inference time quotient or function to be used to measure trained models (but check literature first!)
+
+OLD TODO's: 
 
 * In main.py, convert all current args to a string and pass it to the CSV callback. Because this gets overwritten each run
 * Finetune the args in the shell file so that it fits the args in main.py
@@ -10,22 +30,6 @@ TODO:
   * Use nvidia-ml-py3 or the wrapper py3nvml (https://py3nvml.readthedocs.io/en/latest/)
   * Information on metrics (like GPU usage, etc.) on https://lambdalabs.com/blog/weights-and-bias-gpu-cpu-utilization
       * This is the same metric that WANDB uses to track training runs
-      
-!!! New comparison metrics
-- AdamW optimizer (used in almost all SOTA models nowadays, ConvNeXt 2 (https://arxiv.org/pdf/2301.00808.pdf)) available in tensorflow addons
-- base learning rate (1.5e-4, 2e-4, 8e-4, 6.25e-3 (> from small to large model size, see convnext2 appendix) 
-- weight decay (0.05)
-- optimizer momentum (β1 , β2 =0.9, 0.95,    β1 , β2 =0.9, 0.999 (> from small to large model size, see convnext2 appendix))
-- learning rate schedule (cosine decay, etc. (look for more))
-
-(new 5.01.2023): 
-- Add some function in the callback that takes all the weights (kernels) like in the convnext2 paper and evaluates if they are evenly populated == meaning the model is good.
-
-
-
-(later) 
-* Make appendix with other models
-* Introduce a energy consumption (correlated with number of epochs) / (val) accuracy / inference time quotient or function to be used to measure trained models (but check literature first!)
 
 ## Project description
 
