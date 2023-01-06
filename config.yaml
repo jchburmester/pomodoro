@@ -1,9 +1,64 @@
-sweep_configuration = {
-  'preprocessing': {'values': ['augmentation', 'normalization', 'scaling', 'new_partitioning']}
-  'batch_size': {'values': [16, 32, 64, 128]},
-  'lr': {'values': [1.5e-4, 2.0e-4, 8.0e-4, 6.25e-3]}, # explain in paper why we used convnext training methods
-  'lr_schedule': {'values': ['cosine_decay', 'step_decay', 'constant', 'time_based']},
-  'optimizer': {'values': ['SGD', 'Adam', AdamW', 'RMSProp']},
-  #'optimizer_momentum': {'values': [[0.9, 0.95], [0.9, 0.999]]}, # main file has to accept list
-  'postprocessing': {'values': ['post_quantization','weight_clustering',.'weight_pruning','tf_lite_conversion']}
-}
+sweep_configuration:
+  preprocessing:
+    values:
+    - none
+    - augmentation
+    - normalization
+    - new_partitioning
+  higher_precision_casting:
+    values:
+    - none
+    - float32 # none ist zweimal
+    - float16
+    - float64
+  batch_size:
+    values:
+    - 1
+    - 16
+    - 32
+    - 64
+  lr: # convnext2 appendix
+    values:
+    - 0.01 # baseline SGD
+    - 1.5e-4
+    - 8.0e-4
+    - 6.25e-3
+  lr_schedule:
+    values:
+    - constant
+    - time_based
+    - step_decay
+    - exponential_decay
+  optimizer:
+    values:
+    - SGD
+    - Adam
+    - AdamW
+    - RMSProp
+  optimizer_momentum:
+    values:
+    - 0.0
+    - 0.5
+    - 0.9
+    - 0.99
+  weight_decay: # src for value choice: https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=as_li_ss_tl?ie=UTF8&qid=1536623449&sr=8-2&keywords=Applied+Predictive+modeling&linkCode=sl1&tag=inspiredalgor-20&linkId=6349bf6c3572d05a1a2051bf1ac6c7e9&language=en_US
+    values:
+    - 0.0
+    - 0.001
+    - 0.0001
+    - 0.00001
+  quantization:
+    values:
+    - none
+    - global_quantization
+    - model_quantization
+    - post_quantization
+  postprocessing:
+    values:
+    - none
+    - weight_clustering
+    - weight_pruning
+    - tf_lite_conversion
+
+
+# jit compilation fehlt noch
