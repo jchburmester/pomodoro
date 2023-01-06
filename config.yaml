@@ -7,7 +7,6 @@ sweep_configuration = {
   'parameters':
       {
         'batch_size': {'values': [16, 32, 64]},
-        'epochs': {'values': [5, 10, 15]},
         'lr': {'values': [1.5e-4, 2.0e-4, 8.0e-4, 6.25e-3]}, # explain in paper why we used convnext training methods
         # 'lr_schedule': {'values': ['cosine_decay', 'step_decay', 'constant', 'time_based']},
         'optimizer': {'values': ['SGD', 'Adam', AdamW', 'RMSProp']},
