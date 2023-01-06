@@ -4,7 +4,8 @@ NEW TODO's:
 2. Try to mimic sweep visualisations
 3. Keep track of the things / work we have done (to hand a summary to Leon in the end). Marlena has started writing notes in our google doc.
 4. After energy analysis: main file to write final python file with best sweep configs
-5. Two versions for combinatorics of sweeps: (1) random (2) inverted triangle matrix e.g.
+5. Combinatorics of sweeps: random
+    - find default values for optimization techniques for base case (base line)
 
       
 !!! New comparison metrics
