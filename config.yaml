@@ -1,10 +1,9 @@
 # Step 1: configure sweep
 sweep_configuration = {
-  'method': 'random', # other options: grid, bayes
-  'name': 'sweep',
-  'metric': {'goal': 'minimize',
-             'name': 'loss' # if we choose other metrics, we have to log the variable in our python script
-             },
+  'preprocessing':
+      {
+        'augmentation': {'values'}
+      },
   'parameters':
       {
         'batch_size': {'values': [16, 32, 64]},
@@ -13,16 +12,9 @@ sweep_configuration = {
         # 'lr_schedule': {'values': ['cosine_decay', 'step_decay', 'constant', 'time_based']},
         'optimizer': {'values': ['SGD', 'Adam', AdamW', 'RMSProp']},
         'optimizer_momentum' {'values': [[0.9, 0.95], [0.9, 0.999]]} # main file has to accept list
-     }
+     },
+  'postprocessing':
+      {
+
+      }
 }
-
-# TO BE COPIED INTO PYTHON FILE :::
-
-# Step 2: initialize sweep
-# import wandp
-# sweep_id = wandb.sweep(sweep=sweep_configuration, project="pomodoro")
-
-# Step 3: start sweep agents
-# wandb.agent(sweep_id=sweep_id, function=function_name) # sweep_id is returned after sweep is initialized
-
-# https://docs.wandb.ai/guides/sweeps/add-w-and-b-to-your-code
