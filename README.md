@@ -1,12 +1,10 @@
 # Pomodoro
 NEW TODO's:
-1. Include pre- and postprocessing in sweeps? if yes, change training code
-2. Include energy consumption metric in sweep config?
+1. Write extended config file
+2. Try to mimic sweep visualisations
 3. Keep track of the things / work we have done (to hand a summary to Leon in the end). Marlena has started writing notes in our google doc.
-4. Include steps 2 + 3 of sweep in python file (pre-written in config.yaml)
-5. Loss or accuracy as metric?
-6. manual training for edge cases (all parameters switched on/off). or build this into sweep pipeline?
-7. do we want all parameters to be switched on during all runs? or have some switched off entirely?
+4. After energy analysis: main file to write final python file with best sweep configs
+5. Two versions for combinatorics of sweeps: (1) random (2) inverted triangle matrix e.g.
 
       
 !!! New comparison metrics
