@@ -2,6 +2,9 @@ import numpy as np
 import yaml
 from yaml.loader import SafeLoader
 
+'''Reading the yaml file with the parameters.
+Returning numpy arrays with either the baseline or random combinations.'''
+
 # Opening the yaml file
 with open('config.yaml', 'r') as stream:
 
