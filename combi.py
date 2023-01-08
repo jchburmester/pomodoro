@@ -19,12 +19,12 @@ with open('config.yaml', 'r') as stream:
 
 # Base line
 # Slice matrix to get the first column
-def base_line(para_np):
+def base_line():
     base_line = para_np[:, 0]
     return base_line
 
 # Random combinations
-def random_combi(para_np):
+def random_combi():
     # Set the number of rows and columns in the matrix
     num_rows, num_cols = para_np.shape
 
@@ -49,3 +49,6 @@ def random_combi(para_np):
 
     # Print the result
     return filtered_parameters
+
+print("base_line: {}".format(base_line()))
+print("random_combi: {}".format(random_combi()))
