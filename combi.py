@@ -13,18 +13,27 @@ with open('config.yaml', 'r') as stream:
         parameters = yaml.load(stream, Loader=SafeLoader)
         # Create matrix from dictionary values
         para_np = np.array([[val for val in p['values']] for p in parameters['sweep_configuration'].values()])
+        # Store values
+        config_keys = parameters['sweep_configuration'].keys()
 
     except yaml.YAMLError as e:
         print(e)
 
+#print(para_np)
+#print(config_keys)
+
+
 # Base line
 # Slice matrix to get the first column
-def base_line():
+def base_line(keys=config_keys):
     base_line = para_np[:, 0]
-    return base_line
+    # create dictionary from keys and base_line
+    base_line_dic = dict(zip(keys, base_line))
+
+    return base_line_dic
 
 # Random combinations
-def random_combi():
+def random_combi(keys=config_keys):
     # Set the number of rows and columns in the matrix
     num_rows, num_cols = para_np.shape
 
@@ -47,8 +56,10 @@ def random_combi():
     # Use the mask to select the corresponding elements of parameters_np
     filtered_parameters = para_np[mask]
 
-    # Print the result
-    return filtered_parameters
+    # Create dictionary from keys and filtered_parameters
+    filtered_parameters_dic = dict(zip(keys, filtered_parameters))
 
-print("base_line: {}".format(base_line()))
-print("random_combi: {}".format(random_combi()))
+    return filtered_parameters_dic
+
+#print("base_line: {}".format(base_line()))
+#print("random_combi: {}".format(random_combi()))

@@ -9,52 +9,58 @@ import tensorflow as tf
 import numpy as np
 import argparse
 import os
-#import wandb
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from preprocessing import Preprocessing
 from resnet50 import ResNet50
 from custom_callback import CSVLogger
+from combi import base_line, random_combi
+
 
 # Start a parser with the arguments
 parser = argparse.ArgumentParser(description='ResNet50')
 
-# Preprocessing arguments
-parser.add_argument('--augmentation', action='store_true', help='Augmentation methods')
-parser.add_argument('--normalization', action='store true', help='Normalization methods')
-parser.add_argument('--scaling', action='store true', help='Scaling methods')
-parser.add_argument('--new_partitioning', action='store true', help='Data splitting methods')
-parser.add_argument('--higher_precision_casting', action='store true', help='Casting data to float64')
-
-# Training arguments
-parser.add_argument('--optimizer', action='store true', help='name of optimizer') # Default: SGD, others: Adam, RMSprop
-parser.add_argument('--batch_size', action='store true', help='Batch size') # Default: 32, others: 64, 128
-parser.add_argument('--learning_rate', action='store true', help='Learning rate') # Default: 0.001, others: 0.01, 0.0001
-parser.add_argument('--momentum', action='store true', help='Momentum') # Default: 0.9, others: 0.5, 0.99
-parser.add_argument('--weight_decay', action='store true', help='Weight decay') # Default: 0.0001, others: 0.001, 0.00001
-parser.add_argument('--global_quantization', action='store true', help='Global quantization')
-parser.add_argument('--model_quantization', action='store true', help='Local quantization')
-parser.add_argument('--jit_compilation', action='store true', help='JIT compilation')
-
-# Postprocessing (inferece) arguments
-parser.add_argument('--post_quantization', type=bool, default=False, help='Post traingin quantization')
-parser.add_argument('--weight_clustering', type=bool, default=False, help='Weight clustering')
-parser.add_argument('--weight_pruning', type=bool, default=False, help='Weight pruning')
-parser.add_argument('--tf_lite_conversion', type=bool, default=False, help='TF Lite conversion')
+# Parsing arguments if needed for the shell pipeline
+parser.add_argument('--baseline_training', action='store_true', help='argument for training the model with no or the most basic parameters')
+parser.add_argument('--random_training', action='store_true', help='argument for training the model with random parameters')
 
 # Parse the arguments
 args = parser.parse_args()
-print(args)
 
-learning_rate_v = 0.001 # Default learning rate
+# Get the parameters for the model
+if args.baseline_training:
+    parameters = base_line()
 
-# Global quantization (float32, float64, float16... )
-# Can also be the string 'mixed_float16' or 'mixed_bfloat16', 
-# which causes the compute dtype to be float16 or bfloat16 and the variable dtype to be float32.
-if args.global_quantization:
-    tf.keras.mixed_precision.set_global_policy('mixed_float16')
-    print('Global quantization is enabled')
+if args.random_training:
+    parameters = random_combi()
+
+# Iterate over parameter dictionary and add the parameters to the model
+for key, value in parameters.items():
+    if key == 'preprocessing':
+        args.preprocessing = value
+    if key == 'higher_precision_casting':
+        args.higher_precision_casting = value
+    if key == 'batch_size':
+        args.batch_size = value
+    if key == 'lr':
+        args.learning_rate = value
+    if key == 'lr_schedule':
+        args.lr_schedule = value
+    if key == 'optimizer':
+        args.optimizer = value
+    if key == 'optimizer_momentum':
+        args.optimizer_momentum = value
+    if key == 'weight_decay':
+        args.weight_decay = value
+    if key == 'quantization':
+        args.quantization = value
+    if key == 'postprocessing':
+        args.postprocessing = value
+
+#####################################################################################
+############################ Done until this part ###################################
+#####################################################################################
 
 # Data loading
 data = tf.keras.utils.image_dataset_from_directory(
@@ -69,6 +75,7 @@ data = tf.keras.utils.image_dataset_from_directory(
     seed=SEED,
     interpolation='bilinear',
 )
+
 
 # Convert to float32
 if args.higher_precision_casting:
