@@ -9,6 +9,8 @@ from keras.utils import io_utils
 import collections
 import numpy as np
 import datetime
+import nvidia_smi as nvs
+# import nvidia_ml_py3 as nvm
 
 class CSVLogger(tf.keras.callbacks.Callback):
     """Callback that streams epoch results + timestamps to a CSV file.
@@ -97,4 +99,4 @@ class CSVLogger(tf.keras.callbacks.Callback):
 
     def on_train_end(self, logs=None):
         self.csv_file.close()
-        self.writer = None
+        self.writer = None 
