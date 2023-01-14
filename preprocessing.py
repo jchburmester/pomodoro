@@ -9,7 +9,7 @@ from random import seed
 
 class Preprocessing(tf.keras.layers.Layer):
 
-    def __init__(self, seed, data_shape=(256,256,3), augment=False, normalize=False, scale=False):
+    def __init__(self, seed, data_shape=(256,256,3), config=None):
         """
         Constructor.
 
@@ -30,21 +30,10 @@ class Preprocessing(tf.keras.layers.Layer):
 
         # collects preprocessing steps
         self.prepro_layers = []
-
-        # make sure that normalization and scaling are on their own
-        if(scale and normalize):
-            print("Normalization and Scaling cannot be applied at the same time.")
         
         # data normalization
-        elif(normalize):
+        if config == 'normalization':
             self.prepro_layers.append(layer.Normalization())
-
-        # data scaling. Scales to range [0,1]
-        elif(scale):
-            if(data_shape[-1]==3 and len(data_shape)==3):
-                self.prepro_layers.append(layer.Rescaling(scale=1./255))
-            else:
-                print("Make sure that input images are in RGB format.")
 
         # data augmentation
         self.possible_augmentation_steps = {
@@ -57,10 +46,8 @@ class Preprocessing(tf.keras.layers.Layer):
             "Random Width Shift" : layer.RandomWidth(0.2, seed=self.seed_val)}
 
         # if augmentation should be applied, randomly select 3 augmentation methods
-        if(augment):
-            self.aug_list = list(self.possible_augmentation_steps.items())
-            self.seed_val
-            self.augmentation_subset = sample(self.aug_list, 3)
+        if config == 'augmentation':
+            self.augmentation_subset = sample(list(self.possible_augmentation_steps.items()), 3)
 
             # to collect names of applied methods
             self.aug_names = []
@@ -74,12 +61,9 @@ class Preprocessing(tf.keras.layers.Layer):
             print(*self.aug_names, sep=", ")
 
         # placeholder layer if no preprocessing layer is added
-        if(len(self.prepro_layers)==0):
+        if len(self.prepro_layers) == 0:
             self.prepro_layers.append(layer.Reshape(data_shape))
-
             print("No preprocessing steps applied.")
-
-
 
     @tf.function
     def call(self,x):
