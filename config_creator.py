@@ -2,8 +2,7 @@ import numpy as np
 import yaml
 from yaml.loader import SafeLoader
 
-'''Reading the yaml file with the parameters.
-Returning numpy arrays with either the baseline or random combinations.'''
+'''Reading the yaml file with all parameters.'''
 
 # Opening the yaml file
 with open('config.yaml', 'r') as stream:
@@ -19,9 +18,7 @@ with open('config.yaml', 'r') as stream:
     except yaml.YAMLError as e:
         print(e)
 
-#print(para_np)
-#print(config_keys)
-
+'''Returning numpy arrays with either the baseline or random combinations.'''
 
 # Base line
 # Slice matrix to get the first column
@@ -33,7 +30,7 @@ def base_line(keys=config_keys):
     return base_line_dic
 
 # Random combinations
-def random_combi(keys=config_keys):
+def random_config(keys=config_keys):
     # Set the number of rows and columns in the matrix
     num_rows, num_cols = para_np.shape
 
@@ -62,4 +59,4 @@ def random_combi(keys=config_keys):
     return filtered_parameters_dic
 
 #print("base_line: {}".format(base_line()))
-#print("random_combi: {}".format(random_combi()))
+#print("random_configuration: {}".format(random_config()))

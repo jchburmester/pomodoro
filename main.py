@@ -14,7 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from preprocessing import Preprocessing
 from resnet50 import ResNet50
 from custom_callback import CSVLogger
-from combi import base_line, random_combi
+from config_creator import base_line, random_config
 
 
 # Start a parser with the arguments
@@ -27,7 +27,7 @@ parser.add_argument('--n', type=int, default=1, help='number of training runs')
 # Parse the arguments
 args = parser.parse_args()
 
-parameters = random_combi()
+parameters = random_config()
 
 if args.baseline_training:
     parameters = base_line()
@@ -164,7 +164,7 @@ combined_model.compile(
     optimizer=optimizer,
     loss=tf.keras.losses.CategoricalCrossentropy(),
     metrics=['accuracy'],
-    jit_compile=args.jit_compilation,
+    jit_compile=args.jit_compilation, # where do we assign this?
 )
 
 # Train the model
@@ -174,15 +174,19 @@ combined_model.fit(
     epochs=1
 )
 
+#####################################################################################
+############################ Postprocessing #########################################
+#####################################################################################
+
 # Quantize the model
-if args.global_quantization:
+if parameters['quantization'] == 'global_quantization':
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_quant_model = converter.convert()
     open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
 
 # Quantize the model
-if args.model_quantization:
+elif parameters['quantization'] == 'model_quantization':
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
@@ -190,3 +194,7 @@ if args.model_quantization:
     converter.inference_output_type = tf.uint8
     tflite_quant_model = converter.convert()
     open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
+
+# Missing post quantization
+
+# Save the model???
