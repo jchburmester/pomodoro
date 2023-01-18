@@ -60,8 +60,8 @@ class Preprocessing(tf.keras.layers.Layer):
             print("Applied augmentation steps: ")
             print(*self.aug_names, sep=", ")
 
-        # placeholder layer if no preprocessing layer is added
-        if len(self.prepro_layers) == 0:
+        # placeholder layer if no preprocessing layer is added or preprocessing is new partitioning
+        if len(self.prepro_layers) == 0 or config == 'new partitioning':
             self.prepro_layers.append(layer.Reshape(data_shape))
             print("No preprocessing steps applied.")
 

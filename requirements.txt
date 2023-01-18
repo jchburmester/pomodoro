@@ -1,4 +1,5 @@
 tensorflow
+tensorflow_model_optimization
 csv
 os
 keras

@@ -5,6 +5,7 @@ Pomodoro, 3.12.2022
 SEED = 22
 
 import tensorflow as tf
+import tensorflow_model_optimization as tfmot
 import numpy as np
 import argparse
 import os
@@ -69,7 +70,7 @@ if parameters['preprocessing'] is 'new_partitioning':
     val_size = data.skip(int(0.9 * len(data))).take(int(0.05 * len(data)))
     test_size = data.skip(int(0.95 * len(data))).take(int(0.05 * len(data)))
 else:
-    train_size = data.take(int(0.07 * len(data)))
+    train_size = data.take(int(0.7 * len(data)))
     val_size = data.skip(int(0.7 * len(data))).take(int(0.15 * len(data)))
     test_size = data.skip(int(0.85 * len(data))).take(int(0.15 * len(data)))
 
@@ -86,6 +87,7 @@ preprocessing_layer = Preprocessing(SEED,
 model = ResNet50(
     len(os.listdir('data/train')),
     input_shape=(256, 256, 3),
+    # jit compilation
     jit_compilation=args.jit_compilation,
 )
 
@@ -152,7 +154,7 @@ elif parameters['optimizer'] == 'Adam':
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=learning_rate_schedule)
 elif parameters['optimizer'] == 'AdamW':
-    optimizer = tfa.optimizers.AdamW(
+    optimizer = tf.optimizers.AdamW(
         learning_rate=learning_rate_schedule,
         weight_decay=0.0001)
 
@@ -164,7 +166,8 @@ combined_model.compile(
     optimizer=optimizer,
     loss=tf.keras.losses.CategoricalCrossentropy(),
     metrics=['accuracy'],
-    jit_compile=args.jit_compilation, # where do we assign this?
+    # jit compilation
+    jit_compile=args.jit_compilation
 )
 
 # Train the model
@@ -178,14 +181,14 @@ combined_model.fit(
 ############################ Postprocessing #########################################
 #####################################################################################
 
-# Quantize the model
+# Global quantization
 if parameters['quantization'] == 'global_quantization':
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_quant_model = converter.convert()
     open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
 
-# Quantize the model
+# Model quantization
 elif parameters['quantization'] == 'model_quantization':
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
@@ -195,6 +198,69 @@ elif parameters['quantization'] == 'model_quantization':
     tflite_quant_model = converter.convert()
     open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
 
-# Missing post quantization
+# Post quantization
+elif parameters['quantization'] == 'post_quantization':
+
+
+
+# Weight clustering
+if parameters['internal_optimizations'] == 'weight_clustering':
+    cluster_weights = tfmot.clustering.keras.cluster_weights
+    CentroidInitialization = tfmot.clustering.keras.CentroidInitialization
+
+    # hyperparameters as in the tf documentation
+    clustering_params = {
+        'number_of_clusters': 16,
+        'cluster_centroids_init': CentroidInitialization.LINEAR
+    }
+    clustered_model = cluster_weights(combined_model, **clustering_params)
+
+    # Use smaller learning rate for fine-tuning clustered model
+    opt = optimizer(learning_rate=1e-5)
+
+    clustered_model.compile(
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        optimizer=opt,
+        metrics=['accuracy'],
+        jit_compile=args.jit.compilation
+    )
+
+    clustered_model.fit(
+        train_size,
+        validation_data=val_size,
+        epochs=100
+    )
+
+
+
+# Weight pruning
+elif parameters['internal_optimizations'] == 'weight_pruning':
+    prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
+    epochs = 100
+    end_step = np.ceil(train_size / parameters['batch_size']).astype(np.int32) * epochs
+
+    # hyperparameters as in the tf documentation
+    pruning_params = {
+        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity = 0.50,
+        final_sparsity = 0.80,              
+        begin_step = 0,                                                               
+        end_step = end_step)
+    }
+    pruned_model = prune_low_magnitude(combined_model, **pruning_params)
+    
+    pruned_model.compile(
+        optimizer=optimizer,
+        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+        metrics=['accuracy'],
+        jit_compile=args.jit_compilation
+    )
+
+    pruned_model.fit(
+        train_size,
+        validation_data=val_size,
+        epochs=100
+    )
+
+
 
 # Save the model???

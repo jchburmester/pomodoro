@@ -4,13 +4,7 @@ sweep_configuration:
     - None
     - augmentation
     - normalization
-    - ???
-  data_partitioning:
-    values:
-    - 70-15-15
-    - 80-10-10
-    - 90-5-5
-    - 95-2.5-2.5
+    - new_partitioning
   higher_precision_casting:
     values:
     - None
@@ -59,12 +53,9 @@ sweep_configuration:
     - global_quantization
     - model_quantization
     - post_quantization
-  postprocessing:
+  internal_optimizations:
     values:
     - None
     - weight_clustering
     - weight_pruning
-    - tf_lite_conversion
-
-
-# jit compilation fehlt noch
+    - jit_compilation
