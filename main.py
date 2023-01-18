@@ -168,8 +168,10 @@ combined_model.compile(
     optimizer=optimizer,
     loss=tf.keras.losses.CategoricalCrossentropy(),
     metrics=['accuracy'],
+
     # jit compilation
-    jit_compile=args.jit_compilation
+    if parameters['internal_optimization'] == 'jit_compilation':
+        jit_compilation=True
 )
 
 # Train the model
@@ -223,8 +225,7 @@ if parameters['internal_optimizations'] == 'weight_clustering':
     clustered_model.compile(
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         optimizer=opt,
-        metrics=['accuracy'],
-        jit_compile=args.jit.compilation
+        metrics=['accuracy']
     )
 
     clustered_model.fit(
@@ -253,8 +254,7 @@ elif parameters['internal_optimizations'] == 'weight_pruning':
     pruned_model.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
-        metrics=['accuracy'],
-        jit_compile=args.jit_compilation
+        metrics=['accuracy']
     )
 
     pruned_model.fit(
