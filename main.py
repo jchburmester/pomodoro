@@ -66,13 +66,15 @@ data = data.batch(parameters['batch_size'])
 
 # Split the data according the argument partitioning, either 90/5/5 or 70/15/15
 if parameters['preprocessing'] is 'new_partitioning':
-    train_size = data.take(int(0.9 * len(data)))
-    val_size = data.skip(int(0.9 * len(data))).take(int(0.05 * len(data)))
-    test_size = data.skip(int(0.95 * len(data))).take(int(0.05 * len(data)))
+    train_size = int(0.9 * len(data))
+    train_ds = data.take(train_size)
+    val_ds = data.skip(train_size).take(int(0.05 * len(data)))
+    test_ds = data.skip(int(0.95 * len(data))).take(int(0.05 * len(data)))
 else:
-    train_size = data.take(int(0.7 * len(data)))
-    val_size = data.skip(int(0.7 * len(data))).take(int(0.15 * len(data)))
-    test_size = data.skip(int(0.85 * len(data))).take(int(0.15 * len(data)))
+    train_size = int(0.7 * len(data))
+    train_ds = data.take(train_size)
+    val_ds = data.skip(train_size).take(int(0.15 * len(data)))
+    test_ds = data.skip(int(0.85 * len(data))).take(int(0.15 * len(data)))
 
 # Initialize preprocessing
 preprocessing_layer = Preprocessing(SEED, 
@@ -172,8 +174,8 @@ combined_model.compile(
 
 # Train the model
 combined_model.fit(
-    train_size,
-    validation_data=val_size,
+    train_ds,
+    validation_data=val_ds,
     epochs=1
 )
 
@@ -226,8 +228,8 @@ if parameters['internal_optimizations'] == 'weight_clustering':
     )
 
     clustered_model.fit(
-        train_size,
-        validation_data=val_size,
+        train_ds,
+        validation_data=val_ds,
         epochs=100
     )
 
@@ -256,8 +258,8 @@ elif parameters['internal_optimizations'] == 'weight_pruning':
     )
 
     pruned_model.fit(
-        train_size,
-        validation_data=val_size,
+        train_ds,
+        validation_data=val_ds,
         epochs=100
     )
 
