@@ -1,4 +1,13 @@
 # Pomodoro
+!!! UTILS NEEDED !!!:
+- Util function that creates subfolders per training run "n" in main
+- . that logs all paramters configs from main into a separate yaml file in the subfolder run folder (to_yaml(args, path))
+- (. that converts the information of the run-config into a PDF via pdf packages, or imshow (heatmap) plot of the config)
+- . that logs all paramters configs + OTHERS (see main.py end) to a csv file in root directory that updates after every run (to_csv(args))
+- . that after n runs completes, finds the best configuration via this csv
+- . that creates a model with these parameters after all n runs
+- . ...
+
 NEW TODO's:
 1. Try to mimic sweep visualisations
 2. Keep track of the things / work we have done (to hand a summary to Leon in the end). Marlena has started writing notes in our google doc.
