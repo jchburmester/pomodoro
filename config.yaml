@@ -2,21 +2,33 @@ sweep_configuration:
   preprocessing:
     values:
     - None
-    - augmentation
+    - standardization
     - normalization
-    - new_partitioning
-  higher_precision_casting:
+    - minmax
+  augmentation:
     values:
     - None
-    - float32 # none ist zweimal
+    - random
+    - mixup
+    - cutmix
+  precision:
+    values:
     - float16
+    - float32 
     - float64
+    - global_policy_float16
   batch_size:
     values:
     - 1
     - 16
     - 32
     - 64
+  partitioning:
+    values:
+    - 60-20-20
+    - 70-15-15
+    - 80-10-10
+    - 90-5-5
   lr: # convnext2 appendix
     values:
     - 0.01 # baseline SGD
@@ -29,33 +41,38 @@ sweep_configuration:
     - exponential
     - polynomial
     - cosine
-  optimizer:
-    values:
-    - SGD
-    - Adam
-    - AdamW
-    - RMSProp
   optimizer_momentum:
     values:
     - 0.0
     - 0.5
     - 0.9
     - 0.99
-  weight_decay: # src for value choice: https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=as_li_ss_tl?ie=UTF8&qid=1536623449&sr=8-2&keywords=Applied+Predictive+modeling&linkCode=sl1&tag=inspiredalgor-20&linkId=6349bf6c3572d05a1a2051bf1ac6c7e9&language=en_US
+  optimizer:
     values:
-    - 0.0
+    - RMSProp
+    - SGD
+    - Adam
+    - AdamW
+  weight_decay: # See ConvNext2 appendix
+    values:
+    - 0.01
     - 0.001
     - 0.0001
     - 0.00001
   quantization:
     values:
     - None
-    - global_quantization
-    - model_quantization
-    - post_quantization
+    - pre
+    - post_weights
+    - post_weights_and_activations
   internal_optimizations:
     values:
     - None
-    - weight_clustering
     - weight_pruning
+    - weight_clustering
     - jit_compilation
+
+# weight pruning might be more beneficial for models 
+# that are deployed on resource-constrained devices, 
+# while weight clustering might be more beneficial 
+# for models that need to be interpretable. !
