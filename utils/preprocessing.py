@@ -3,13 +3,12 @@ Main file for preprocessing
 Pomodoro, 4.12.2022
 """
 import tensorflow as tf
-import tensorflow.keras.layers as layer
+from tensorflow.keras import layers as layer
 from random import sample
-from random import seed
 
 class Preprocessing(tf.keras.layers.Layer):
 
-    def __init__(self, seed, data_shape=(256,256,3), config=None):
+    def __init__(self, seed, data_shape=(256,256,3), random=False):
         """
         Constructor.
 
@@ -28,25 +27,21 @@ class Preprocessing(tf.keras.layers.Layer):
         
         self.seed_val = seed
 
-        # collects preprocessing steps
-        self.prepro_layers = []
-        
-        # data normalization
-        if config == 'normalization':
-            self.prepro_layers.append(layer.Normalization())
+        if random == True:
+            # collects preprocessing steps
+            self.prepro_layers = []
 
-        # data augmentation
-        self.possible_augmentation_steps = {
-            "Random Flipping" : layer.RandomFlip(seed=self.seed_val), 
-            "Random Rotation" : layer.RandomRotation(0.3, seed=self.seed_val), 
-            "Random Zoom" : layer.RandomZoom(0.2, seed=self.seed_val),
-            "Random Contrast" : layer.RandomContrast(0.3, seed=self.seed_val), 
-            "Random Translation" : layer.RandomTranslation(0.2,0.2, seed=self.seed_val), 
-            "Random Height Shift" : layer.RandomHeight(0.2, seed=self.seed_val), 
-            "Random Width Shift" : layer.RandomWidth(0.2, seed=self.seed_val)}
+            # data augmentation
+            self.possible_augmentation_steps = {
+                "Random Flipping" : layer.RandomFlip(seed=self.seed_val), 
+                "Random Rotation" : layer.RandomRotation(0.3, seed=self.seed_val), 
+                "Random Zoom" : layer.RandomZoom(0.2, seed=self.seed_val),
+                "Random Contrast" : layer.RandomContrast(0.3, seed=self.seed_val), 
+                "Random Translation" : layer.RandomTranslation(0.2,0.2, seed=self.seed_val), 
+                "Random Height Shift" : layer.RandomHeight(0.2, seed=self.seed_val), 
+                "Random Width Shift" : layer.RandomWidth(0.2, seed=self.seed_val)}
 
-        # if augmentation should be applied, randomly select 3 augmentation methods
-        if config == 'augmentation':
+            # if augmentation should be applied, randomly select 3 augmentation methods
             self.augmentation_subset = sample(list(self.possible_augmentation_steps.items()), 3)
 
             # to collect names of applied methods
@@ -61,7 +56,8 @@ class Preprocessing(tf.keras.layers.Layer):
             print(*self.aug_names, sep=", ")
 
         # placeholder layer if no preprocessing layer is added or preprocessing is new partitioning
-        if len(self.prepro_layers) == 0 or config == 'new partitioning':
+        elif random == False:
+            self.prepro_layers = []
             self.prepro_layers.append(layer.Reshape(data_shape))
             print("No preprocessing steps applied.")
 
