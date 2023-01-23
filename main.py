@@ -2,9 +2,11 @@
 Main file for the project
 Pomodoro, 3.12.2022
 """
+
 SEED = 22
 
 import tensorflow as tf
+# import tensorflow_addons as tfa We are using the old AdamW 
 import tensorflow_model_optimization as tfmot
 import numpy as np
 import argparse
@@ -12,11 +14,12 @@ import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from preprocessing import Preprocessing
-from resnet50 import ResNet50
-from custom_callback import CSVLogger
-from config_creator import base_line, random_config
-
+from utils.preprocessing import Preprocessing
+from utils.custom_callback import CSVLogger
+from utils.config_creator import base_line, random_config
+from utils.mixup import mixup
+from utils.cutmix import cutmix
+from models.resnet50 import load_model
 
 # Start a parser with the arguments
 parser = argparse.ArgumentParser(description='Configuration for the training of the model')
@@ -33,65 +36,83 @@ parameters = random_config()
 if args.baseline_training:
     parameters = base_line()
 
-# Load the CIFAR100 dataset
-data = tf.keras.datasets.cifar100.load_data()
+#####################################################################################
+############################ Load data ##############################################
+#####################################################################################
 
-X = data[0][0]
-y = data[0][1]
+(x_train, y_train), (_, _) = tf.keras.datasets.cifar100.load_data()
 
-# Convert to tf.data.Dataset
-data = tf.data.Dataset.from_tensor_slices((X, y))
+if parameters['preprocessing'] == 'normalization':
+    x_train = x_train.astype('float32') / 255.
+elif parameters['preprocessing'] == 'standardization':
+    x_train = x_train.astype('float32')
+    x_train = (x_train - np.mean(x_train, axis=(0, 1, 2))) / (np.std(x_train, axis=(0, 1, 2)))
+elif parameters['preprocessing'] == 'minmax':
+    x_train = x_train.astype('float32')
+    x_train = (x_train - np.min(x_train, axis=(0, 1, 2))) / (np.max(x_train, axis=(0, 1, 2)) - np.min(x_train, axis=(0, 1, 2)))
+
+x_train = tf.reshape(x_train, (-1, 32, 32, 3))
+y_train = tf.keras.utils.to_categorical(y_train, 100)
+
+if parameters['augmentation'] == 'mixup':
+    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(1)
+    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(1)
+    mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
+    data = mix_ds.map(lambda ds1, ds2: mixup(ds1, ds2, 0.2), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+elif parameters['augmentation'] == 'cutmix':
+    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(1)
+    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(1)
+    mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
+    data = mix_ds.map(lambda ds1, ds2: cutmix(ds1, ds2), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+elif parameters['augmentation'] == 'random':
+    data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=True)
+elif parameters['augmentation'] == 'None': 
+    data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
 
 # Shuffle the data
-data = data.shuffle(len(data), seed=SEED)
+data = data.shuffle(1024, seed=SEED)
 
 #####################################################################################
 ############################ Precision casting ######################################
 #####################################################################################
 
-# Cast the data to higher precision if needed
-if parameters['higher_precision_casting'] is not 'None':
-    data = data.map(lambda x, y: (tf.cast(x, parameters['higher_precision_casting']), y))
+if parameters['precision'] == 'global_policy_float16':
+    tf.keras.mixed_precision.set_global_policy('mixed_float16')
+else:
+    data = data.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype(str(parameters['precision']))), y))
 
 #####################################################################################
 ############################ Batch size #############################################
 #####################################################################################
 
 # batch the data
-data = data.batch(parameters['batch_size'])
+data = data.batch(int(parameters['batch_size']))
 
 #####################################################################################
-############################ Preprocessing ##########################################
+############################ Partitioning ###########################################
 #####################################################################################
 
-# Split the data according the argument partitioning, either 90/5/5 or 70/15/15
-if parameters['preprocessing'] is 'new_partitioning':
-    train_size = int(0.9 * len(data))
-    train_ds = data.take(train_size)
-    val_ds = data.skip(train_size).take(int(0.05 * len(data)))
-    test_ds = data.skip(int(0.95 * len(data))).take(int(0.05 * len(data)))
-else:
-    train_size = int(0.7 * len(data))
-    train_ds = data.take(train_size)
-    val_ds = data.skip(train_size).take(int(0.15 * len(data)))
-    test_ds = data.skip(int(0.85 * len(data))).take(int(0.15 * len(data)))
+split = [round(float(x) * 0.01, 2) for x in parameters['partitioning'].split('-')]
 
-# Initialize preprocessing
-preprocessing_layer = Preprocessing(SEED, 
-                                    data.as_numpy_iterator().next()[0].shape,
-                                    parameters['preprocessing'])
+# Split the data according the argument partitioning
+train_size = int(split[0] * len(data))
+train_ds = data.take(train_size)
+val_ds = data.skip(train_size).take(int(split[1] * len(data)))
+test_ds = data.skip(int(round(split[0] + split[1],2) * len(data))).take(int(split[1] * len(data)))
+
+# Print the size of the data
+print('\n')
+print('Size of the training set: ', len(train_ds))
+print('Size of the validation set: ', len(val_ds))
+print('Size of the test set: ', len(test_ds))
 
 #####################################################################################
 ############################ Model building #########################################
 #####################################################################################
 
-# Initialize model
-model = ResNet50(
-    len(os.listdir('data/train')),
-    input_shape=(256, 256, 3),
-    # jit compilation
-    jit_compilation=args.jit_compilation,
-)
+model = load_model(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape, weights=None)
 
 # Initialize model, stack the preprocessing layer and the model
 combined_model = tf.keras.Sequential([
@@ -156,23 +177,32 @@ elif parameters['optimizer'] == 'Adam':
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=learning_rate_schedule)
 elif parameters['optimizer'] == 'AdamW':
-    optimizer = tf.optimizers.AdamW(
+    optimizer = tf.keras.optimizers.experimental.AdamW(
         learning_rate=learning_rate_schedule,
-        weight_decay=0.0001)
+        weight_decay=parameters['weight_decay'])
 
 #####################################################################################
 ############################ Training ###############################################
 #####################################################################################
 
-combined_model.compile(
-    optimizer=optimizer,
-    loss=tf.keras.losses.CategoricalCrossentropy(),
-    metrics=['accuracy'],
+if parameters['quantization'] == 'pre':
+    quantize_model = tfmot.quantization.keras.quantize_model
+    combined_model = quantize_model(combined_model)
 
-    # jit compilation
-    if parameters['internal_optimization'] == 'jit_compilation':
-        jit_compilation=True
-)
+if parameters['internal_optimization'] == 'jit_compilation':
+    combined_model.compile(
+        optimizer=optimizer,
+        loss=tf.keras.losses.CategoricalCrossentropy(),
+        metrics=['accuracy'],
+        jit_compile=True
+    )
+else:
+    combined_model.compile(
+        optimizer=optimizer,
+        loss=tf.keras.losses.CategoricalCrossentropy(),
+        metrics=['accuracy'],
+        jit_compile=False
+    )
 
 # Train the model
 combined_model.fit(
@@ -182,30 +212,57 @@ combined_model.fit(
 )
 
 #####################################################################################
-############################ Postprocessing #########################################
+############################ Quantization ###########################################
 #####################################################################################
 
 # Global quantization
-if parameters['quantization'] == 'global_quantization':
+if parameters['quantization'] == 'post_weights':
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_quant_model = converter.convert()
-    open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
+    combined_model = tf.keras.models.load_model(tflite_quant_model)
 
 # Model quantization
-elif parameters['quantization'] == 'model_quantization':
+if parameters['quantization'] == 'post_weights_and_activations':
+    def representative_dataset_gen():
+        for input_value, _ in train_ds.take(100):
+            yield [input_value]
+
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-    converter.inference_input_type = tf.uint8
-    converter.inference_output_type = tf.uint8
+    converter.representative_dataset = representative_dataset_gen
     tflite_quant_model = converter.convert()
-    open('resnet50_quant.tflite', 'wb').write(tflite_quant_model)
+    combined_model = tf.keras.models.load_model(tflite_quant_model)
 
-# Post quantization
-elif parameters['quantization'] == 'post_quantization':
+#####################################################################################
+############################ Pruning ################################################
+#####################################################################################
 
+if parameters['internal_optimizations'] == 'weight_pruning':
+    prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
+    epochs = 2
+    end_step = np.ceil(train_size / parameters['batch_size']).astype(np.int32) * epochs
 
+    # hyperparameters as in the tf documentation
+    pruning_params = {
+        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity = 0.50,
+        final_sparsity = 0.80,              
+        begin_step = 0,                                                               
+        end_step = end_step)
+    }
+    combined_model = prune_low_magnitude(combined_model, **pruning_params)
+    
+    combined_model.compile(
+        optimizer=optimizer,
+        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+        metrics=['accuracy']
+    )
+
+    combined_model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=1
+    )
 
 # Weight clustering
 if parameters['internal_optimizations'] == 'weight_clustering':
@@ -217,52 +274,30 @@ if parameters['internal_optimizations'] == 'weight_clustering':
         'number_of_clusters': 16,
         'cluster_centroids_init': CentroidInitialization.LINEAR
     }
-    clustered_model = cluster_weights(combined_model, **clustering_params)
+    combined_model = cluster_weights(combined_model, **clustering_params)
 
     # Use smaller learning rate for fine-tuning clustered model
-    opt = optimizer(learning_rate=1e-5)
+    opt = tf.keras.optimizers.Adam(learning_rate=1e-5)
 
-    clustered_model.compile(
+    combined_model.compile(
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         optimizer=opt,
         metrics=['accuracy']
     )
 
-    clustered_model.fit(
+    combined_model.fit(
         train_ds,
         validation_data=val_ds,
-        epochs=100
+        epochs=1
     )
 
+# utils > to csv / yaml
+# save_metric(model.evaluate(test_ds))
 
+# save metrics to csv: run#, model_name, preprocessing, augmentation, precision, batch, partitioning, 
+# lr, lr_schedule, optimizer, optimizer_momentum, quantization, internal_optimizations, train_accuracy, 
+# test_accuracy, loss, #parameters, time_elapsed
 
-# Weight pruning
-elif parameters['internal_optimizations'] == 'weight_pruning':
-    prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
-    epochs = 100
-    end_step = np.ceil(train_size / parameters['batch_size']).astype(np.int32) * epochs
-
-    # hyperparameters as in the tf documentation
-    pruning_params = {
-        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity = 0.50,
-        final_sparsity = 0.80,              
-        begin_step = 0,                                                               
-        end_step = end_step)
-    }
-    pruned_model = prune_low_magnitude(combined_model, **pruning_params)
-    
-    pruned_model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
-        metrics=['accuracy']
-    )
-
-    pruned_model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=100
-    )
-
-
-
-# Save the model???
+# save metrics to yaml (in run folder): run#, model_name, preprocessing, augmentation, precision, batch, 
+# partitioning, lr, lr_schedule, optimizer, optimizer_momentum, quantization, internal_optimizations,  
+# train_accuracy, test_accuracy, loss, #parameters, time_elapsed
