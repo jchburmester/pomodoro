@@ -19,7 +19,8 @@ from utils.custom_callback import CSVLogger
 from utils.config_creator import base_line, random_config
 from utils.mixup import mixup
 from utils.cutmix import cutmix
-from models.resnet50 import load_model
+from models.resnet50 import load_resnet50
+from models.convnextv1 import load_convnextv1
 
 # Start a parser with the arguments
 parser = argparse.ArgumentParser(description='Configuration for the training of the model')
@@ -27,6 +28,7 @@ parser = argparse.ArgumentParser(description='Configuration for the training of 
 # Parsing arguments if needed for the shell pipeline
 parser.add_argument('--baseline_training', action='store_true', help='argument for training the model with no or the most basic parameters')
 parser.add_argument('--n', type=int, default=1, help='number of training runs')
+parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50, convnextv1')
 
 # Parse the arguments
 args = parser.parse_args()
@@ -112,7 +114,11 @@ print('Size of the test set: ', len(test_ds))
 ############################ Model building #########################################
 #####################################################################################
 
-model = load_model(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape, weights=None)
+if args.model == 'resnet50':
+    model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape, weights=None)
+
+elif args.model == 'convnextv1':
+    model = load_convnextv1(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape, weights=None)
 
 # Initialize model, stack the preprocessing layer and the model
 combined_model = tf.keras.Sequential([
