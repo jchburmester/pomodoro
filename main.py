@@ -14,6 +14,7 @@ import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+from utils.subfolder_creation import create_subfolder
 from utils.preprocessing import Preprocessing
 from utils.custom_callback import CSVLogger
 from utils.config_creator import base_line, random_config
@@ -21,6 +22,9 @@ from utils.mixup import mixup
 from utils.cutmix import cutmix
 from models.resnet50 import load_resnet50
 from models.convnextv1 import load_convnextv1
+
+# Create a subfolder to store information about current run
+create_subfolder()
 
 # Start a parser with the arguments
 parser = argparse.ArgumentParser(description='Configuration for the training of the model')
