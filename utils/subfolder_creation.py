@@ -6,8 +6,9 @@ def create_subfolder():
     In new subfolder, store information about current run.
     Subfolders are named by the index of their run.
     """
-    parent_dir = os.path.abspath(os.path.join('.', os.pardir))
-    
+    # get parent directory
+    parent_dir = os.getcwd()
+
     # create head folder in parent directory to store the subfolders
     head_folder_path = os.path.join(parent_dir, 'runs')
 
@@ -19,8 +20,17 @@ def create_subfolder():
 
     # if first run, creates subfolder with index 0
     if len(runs_dirs) == 0:
-        current_dir = os.makedirs(os.path.join(head_folder_path, '0'))
+        os.makedirs(os.path.join(head_folder_path, '0'))
+        current_dir = str(0)
+
     # if subsequent run, creates subfolder with next index
     else:
         last_index = runs_dirs[-1]
-        current_dir = os.makedirs(os.path.join(head_folder_path, str(int(last_index)+1)))
+        os.makedirs(os.path.join(head_folder_path, str(int(last_index)+1)))
+        current_dir = str(int(last_index)+1)
+    
+    print(f'Current run directory: {current_dir}')
+    return current_dir
+
+
+create_subfolder()

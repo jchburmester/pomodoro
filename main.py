@@ -23,9 +23,6 @@ from utils.cutmix import cutmix
 from models.resnet50 import load_resnet50
 from models.convnextv1 import load_convnextv1
 
-# Create a subfolder to store information about current run
-create_subfolder()
-
 # Start a parser with the arguments
 parser = argparse.ArgumentParser(description='Configuration for the training of the model')
 
@@ -37,10 +34,24 @@ parser.add_argument('--model', type=str, default='resnet50', help='model to trai
 # Parse the arguments
 args = parser.parse_args()
 
+#####################################################################################
+############################ Initialise Parameters ##################################
+#####################################################################################
+
 parameters = random_config()
 
 if args.baseline_training:
     parameters = base_line()
+
+#####################################################################################
+############################ Create Folders & Parameter File ########################
+#####################################################################################
+
+current_dir = create_subfolder()
+
+with open(os.path.join('runs', current_dir, 'parameters.txt'), 'w') as f:
+    for key, value in parameters.items():
+        f.write(str(key)+': '+str(value)+'\n')
 
 #####################################################################################
 ############################ Load data ##############################################
@@ -268,13 +279,10 @@ if parameters['internal_optimizations'] == 'weight_pruning':
         metrics=['accuracy']
     )
 
-    combined_model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=1
-    )
+#####################################################################################
+############################ Weight Clustering ######################################
+#####################################################################################
 
-# Weight clustering
 if parameters['internal_optimizations'] == 'weight_clustering':
     cluster_weights = tfmot.clustering.keras.cluster_weights
     CentroidInitialization = tfmot.clustering.keras.CentroidInitialization
@@ -295,11 +303,18 @@ if parameters['internal_optimizations'] == 'weight_clustering':
         metrics=['accuracy']
     )
 
-    combined_model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=1
-    )
+#####################################################################################
+############################ Model Fit ##############################################
+#####################################################################################
+
+csv_logger = CSVLogger(os.path.join(current_dir, 'training.log'))
+
+combined_model.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=1,
+    callbacks=[csv_logger]
+)
 
 # utils > to csv / yaml
 # save_metric(model.evaluate(test_ds))
