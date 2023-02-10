@@ -1,10 +1,17 @@
 # Pomodoro
 
-Open topics
-===========
+Open topics 10/02
+=================
 
-1. Tldr or other app: create diagram to show training / logging pipeline.
-2. 
+1. Miro Board: create diagram to show training / logging pipeline. [Marlena]
+2. Draft overleaf report
+3. Get GPU logging running
+4. Input error when trying to train
+5. Discuss epoch setting (especially in weight pruning since this seems to be a special case?)
+6. Commenting + Code Cleaning + Function descriptions
+7. analysis.py file to be continued. Requires training logs to do so.
+8. Once step 7 is done, amend shell pipeline.
+9. Discuss arguments of shell file.
 
 
 !!! UTILS NEEDED !!!:
