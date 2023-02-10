@@ -5,13 +5,9 @@
 # and different post-processing steps to find an optimal combination of these techniques for
 # little energy consumption with high training performance.
 
-# run the training script with different combinations
-echo "Running training with different parameter combinations"
-echo "Choose between two models: resnet50, convnextv1. Type --model resnet50 or --model convnextv1 to choose which model to run"
-
-# for i in `seq 10`;do echo hello; done
-
-python main.py
+for i in `seq 2`;
+do python main.py --epochs 10;
+done
 
 # start GPU reader, that creates a csv file with the GPU energy consumption data, named after the techniques involved
 echo "Reading GPU..."
@@ -24,6 +20,6 @@ echo "Reading GPU..."
 
 # run the analysis script to find a winner
 echo "Running GPU results comparison"
-python analysis.py
+#python analysis.py
 
 done

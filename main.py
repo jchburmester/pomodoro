@@ -27,8 +27,8 @@ from models.convnextv1 import load_convnextv1
 parser = argparse.ArgumentParser(description='Configuration for the training of the model')
 
 # Parsing arguments if needed for the shell pipeline
-parser.add_argument('--baseline_training', action='store_true', help='argument for training the model with no or the most basic parameters')
-parser.add_argument('--n', type=int, default=1, help='number of training runs')
+parser.add_argument('--baseline', action='store_true', help='argument for training the model with no or the most basic parameters')
+parser.add_argument('--epochs', type=int, default=1, help='number of epochs')
 parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50, convnextv1')
 
 # Parse the arguments
@@ -40,7 +40,7 @@ args = parser.parse_args()
 
 parameters = random_config()
 
-if args.baseline_training:
+if args.baseline:
     parameters = base_line()
 
 #####################################################################################
@@ -50,6 +50,9 @@ if args.baseline_training:
 current_dir = create_subfolder()
 
 with open(os.path.join('runs', current_dir, 'parameters.txt'), 'w') as f:
+    # store model name
+    f.write(str(args.model)+'\n')
+    # store parameters
     for key, value in parameters.items():
         f.write(str(key)+': '+str(value)+'\n')
 
@@ -229,7 +232,7 @@ else:
 combined_model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=1
+    epochs=args.epochs
 )
 
 #####################################################################################
@@ -312,11 +315,10 @@ csv_logger = CSVLogger(os.path.join(current_dir, 'training.log'))
 combined_model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=1,
+    epochs=args.epochs,
     callbacks=[csv_logger]
 )
 
-# utils > to csv / yaml
 # save_metric(model.evaluate(test_ds))
 
 # save metrics to csv: run#, model_name, preprocessing, augmentation, precision, batch, partitioning, 

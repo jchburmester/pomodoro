@@ -9,7 +9,7 @@ from keras.utils import io_utils
 import collections
 import numpy as np
 import datetime
-import nvidia_smi as nvs
+# import nvidia_smi as nvs
 # import nvidia_ml_py3 as nvm
 
 class CSVLogger(tf.keras.callbacks.Callback):

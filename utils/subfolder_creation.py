@@ -29,8 +29,4 @@ def create_subfolder():
         os.makedirs(os.path.join(head_folder_path, str(int(last_index)+1)))
         current_dir = str(int(last_index)+1)
     
-    print(f'Current run directory: {current_dir}')
     return current_dir
-
-
-create_subfolder()
