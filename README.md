@@ -9,7 +9,7 @@ Open topics 10/02
 4. Input error when trying to train
 5. Discuss epoch setting (especially in weight pruning since this seems to be a special case?)
 6. Commenting + Code Cleaning + Function descriptions
-7. analysis.py file to be continued. Requires training logs to do so.
+7. analysis.py file to be continued. Requires training logs to do so. Idea for the last lines of the file would be to delete all files on the run folders to ensure a fresh start during consecutive training.
 8. Once step 7 is done, amend shell pipeline.
 9. Discuss arguments of shell file.
 
