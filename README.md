@@ -1,4 +1,12 @@
 # Pomodoro
+
+Open topics
+===========
+
+1. Tldr or other app: create diagram to show training / logging pipeline.
+2. 
+
+
 !!! UTILS NEEDED !!!:
 - Util function that creates subfolders per training run "n" in main
 - . that logs all paramters configs from main into a separate yaml file in the subfolder run folder (to_yaml(args, path))

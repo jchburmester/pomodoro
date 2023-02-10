@@ -9,6 +9,8 @@
 echo "Running training with different parameter combinations"
 echo "Choose between two models: resnet50, convnextv1. Type --model resnet50 or --model convnextv1 to choose which model to run"
 
+# for i in `seq 10`;do echo hello; done
+
 python main.py
 
 # start GPU reader, that creates a csv file with the GPU energy consumption data, named after the techniques involved
