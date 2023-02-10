@@ -49,9 +49,10 @@ if args.baseline:
 
 current_dir = create_subfolder()
 
-with open(os.path.join('runs', current_dir, 'parameters.txt'), 'w') as f:
+# store the parameters as a dictionary in a yaml file
+with open(os.path.join('runs', current_dir, 'parameters.yaml'), 'w') as f:
     # store model name
-    f.write(str(args.model)+'\n')
+    f.write('model: '+str(args.model)+'\n')
     # store parameters
     for key, value in parameters.items():
         f.write(str(key)+': '+str(value)+'\n')
