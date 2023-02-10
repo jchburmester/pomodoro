@@ -99,4 +99,4 @@ class CSVLogger(tf.keras.callbacks.Callback):
 
     def on_train_end(self, logs=None):
         self.csv_file.close()
-        self.writer = None 
+        self.writer = None
