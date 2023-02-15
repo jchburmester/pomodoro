@@ -90,7 +90,8 @@ elif parameters['augmentation'] == 'random':
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=True)
 elif parameters['augmentation'] == 'None': 
     data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
+
+preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
 
 # Shuffle the data
 data = data.shuffle(1024, seed=SEED)

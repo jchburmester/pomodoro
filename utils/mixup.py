@@ -21,11 +21,21 @@ def mixup(ds1, ds2, alpha):
     x_l = tf.reshape(l, (batch_size, 1, 1, 1))
     y_l = tf.reshape(l, (batch_size, 1))
 
+    images_one = tf.cast(images_one, tf.float32)
+    images_two = tf.cast(images_two, tf.float32)
+    labels_one = tf.cast(labels_one, tf.float32)
+    labels_two = tf.cast(labels_two, tf.float32)
+
     # Perform mixup on both images and labels by combining a pair of images/labels
     # (one from each dataset) into one image/label
-    images = images_one * x_l + images_two * (1 - x_l)
-    labels = labels_one * y_l + labels_two * (1 - y_l)
-    return (images, labels)
+    image = images_one * x_l + images_two * (1 - x_l)
+    label = labels_one * y_l + labels_two * (1 - y_l)
+    
+    # reshape image if needed
+    if image.shape != (32,32,3):
+        image = tf.reshape(image, (32,32,3))
+    
+    return (image, label)
     
 if __name__ == '__main__':
     # Test the mixup function with images from cifar10

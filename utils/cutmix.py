@@ -92,6 +92,10 @@ def cutmix(train_ds_one, train_ds_two):
     # Combine the labels of both images
     label = lambda_value * label1 + (1 - lambda_value) * label2
 
+    # if shape is not (32, 32, 3) then reshape
+    if image.shape != (32, 32, 3):
+        image = tf.reshape(image, (32, 32, 3))
+
     return image, label
 
 if __name__ == '__main__':

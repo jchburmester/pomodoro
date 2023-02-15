@@ -1,0 +1,13 @@
+model: resnet50
+preprocessing: standardization
+augmentation: mixup
+precision: float64
+batch_size: 1
+partitioning: 80-10-10
+lr: 0.01
+lr_schedule: cosine
+optimizer_momentum: 0.9
+optimizer: RMSProp
+weight_decay: 0.01
+quantization: pre
+internal_optimizations: weight_clustering
