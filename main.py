@@ -133,11 +133,15 @@ print('Size of the test set: ', len(test_ds))
 ############################ Model building #########################################
 #####################################################################################
 
+print(parameters)
+print(data.as_numpy_iterator().next()[0].shape)
+print(data.as_numpy_iterator().next()[0].shape[1:4])
+
 if args.model == 'resnet50':
-    model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape, weights=None)
+    model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4], weights=None)
 
 elif args.model == 'convnextv1':
-    model = load_convnextv1(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape, weights=None)
+    model = load_convnextv1(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4], weights=None)
 
 # Initialize model, stack the preprocessing layer and the model
 combined_model = tf.keras.Sequential([
