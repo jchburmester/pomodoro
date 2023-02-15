@@ -2,8 +2,8 @@ import os
 
 def create_subfolder():
     """
+    Makes sure that headfolder 'runs' exists to store information about current run.
     Checks which runs subfolders already exist and creates subsequent one. 
-    In new subfolder, store information about current run.
     Subfolders are named by the index of their run.
     """
     # get parent directory
@@ -16,12 +16,18 @@ def create_subfolder():
         os.makedirs(head_folder_path)
 
     # stores all existing runs subfolders
-    runs_dirs = os.listdir(head_folder_path)
+    runs_dirs = sorted(os.listdir(head_folder_path))
 
     # if first run, creates subfolder with index 0
     if len(runs_dirs) == 0:
-        os.makedirs(os.path.join(head_folder_path, '0'))
+        os.makedirs(os.path.join(head_folder_path, str(0)))
         current_dir = str(0)
+    
+    # make sure that numbers lower 10 get preceded by '0', for sorting reasons
+    elif len(runs_dirs) < 10:
+        last_index = runs_dirs[-1]
+        os.makedirs(os.path.join(head_folder_path, '0' + str(int(last_index)+1)))
+        current_dir = '0' + str(int(last_index)+1)
 
     # if subsequent run, creates subfolder with next index
     else:
