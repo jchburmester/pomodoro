@@ -59,7 +59,6 @@ class Preprocessing(tf.keras.layers.Layer):
         elif random == False:
             self.prepro_layers = []
             self.prepro_layers.append(layer.Reshape(data_shape))
-            print("No preprocessing steps applied.")
 
     @tf.function
     def call(self,x):
