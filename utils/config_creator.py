@@ -5,15 +5,15 @@ from yaml.loader import SafeLoader
 '''Reading the yaml file with all parameters.'''
 
 # Opening the yaml file
-with open('utils\config.yaml', 'r') as stream:
+with open('utils/config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
         parameters = yaml.load(stream, Loader=SafeLoader)
         # Create matrix from dictionary values
-        para_np = np.array([[val for val in p['values']] for p in parameters['sweep_configuration'].values()])
+        para_np = np.array([[val for val in p['values']] for p in parameters['configuration'].values()])
         # Store values
-        config_keys = parameters['sweep_configuration'].keys()
+        config_keys = parameters['configuration'].keys()
 
     except yaml.YAMLError as e:
         print(e)
@@ -58,5 +58,6 @@ def random_config(keys=config_keys):
 
     return filtered_parameters_dic
 
-#print("base_line: {}".format(base_line()))
-#print("random_configuration: {}".format(random_config()))
+if __name__ == '__main__':
+    print("base_line: {}".format(base_line()))
+    print("random_configuration: {}".format(random_config()))
