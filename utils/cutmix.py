@@ -91,10 +91,9 @@ def cutmix(train_ds_one, train_ds_two):
 
     # Combine the labels of both images
     label = lambda_value * label1 + (1 - lambda_value) * label2
-
-    # if shape is not (32, 32, 3) then reshape
-    if image.shape != (32, 32, 3):
-        image = tf.reshape(image, (32, 32, 3))
+    
+    image = tf.squeeze(image)
+    label = tf.squeeze(label)
 
     return image, label
 
@@ -115,5 +114,6 @@ if __name__ == '__main__':
     for i in range(9):
         ax = plt.subplot(3, 3, i + 1)
         plt.imshow(tf.reshape(image_batch[i], (32, 32, 3)))
+        print(tf.reshape(label_batch[i], (10,)).numpy().tolist())
         plt.axis("off")
     plt.show()
