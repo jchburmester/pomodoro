@@ -31,9 +31,8 @@ def mixup(ds1, ds2, alpha):
     image = images_one * x_l + images_two * (1 - x_l)
     label = labels_one * y_l + labels_two * (1 - y_l)
     
-    # reshape image if needed
-    if image.shape != (32,32,3):
-        image = tf.reshape(image, (32,32,3))
+    image = tf.squeeze(image)
+    label = tf.squeeze(label)
     
     return (image, label)
     
