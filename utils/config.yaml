@@ -1,4 +1,4 @@
-sweep_configuration:
+configuration:
   preprocessing:
     values:
     - None
