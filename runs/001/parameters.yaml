@@ -1,0 +1,13 @@
+model: resnet50
+preprocessing: None
+augmentation: mixup
+precision: float64
+batch_size: 1
+partitioning: 60-20-20
+lr: 0.0008
+lr_schedule: constant
+optimizer_momentum: 0.9
+optimizer: SGD
+weight_decay: 0.0001
+quantization: None
+internal_optimizations: weight_clustering
