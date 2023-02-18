@@ -102,11 +102,11 @@ if __name__ == '__main__':
     x_train = x_train.astype('float32') / 255.
     y_train = tf.keras.utils.to_categorical(y_train, 10)
 
-    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(32)
-    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(32)
+    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024)
+    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024)
     mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
 
-    train_cm = mix_ds.map(lambda ds1, ds2: cutmix(ds1, ds2), num_parallel_calls=tf.data.AUTOTUNE)
+    train_cm = mix_ds.shuffle(1024).map(lambda ds1, ds2: cutmix(ds1, ds2), num_parallel_calls=tf.data.AUTOTUNE).batch(32)
 
     # Let's preview 9 samples from the dataset
     image_batch, label_batch = next(iter(train_cm))
