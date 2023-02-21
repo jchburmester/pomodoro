@@ -43,11 +43,11 @@ if __name__ == '__main__':
     x_train = tf.reshape(x_train, (-1, 32, 32, 3))
     y_train = tf.keras.utils.to_categorical(y_train, 10)
 
-    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(9)
-    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024).batch(9)
+    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024)
+    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024)
     mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
 
-    train_mu = mix_ds.map(lambda ds1, ds2: mixup(ds1, ds2, 0.2), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    train_mu = mix_ds.map(lambda ds1, ds2: mixup(ds1, ds2, 0.2), num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(9)
 
     sample_images, sample_labels = next(iter(train_mu))
     plt.figure(figsize=(10, 10))
