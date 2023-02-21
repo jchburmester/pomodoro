@@ -14,7 +14,7 @@ from tensorflow.python.ops.numpy_ops import np_config
 np_config.enable_numpy_behavior()
 
 from utils.callback import SMICallback
-
+ 
 # Load the mnist dataset
 # (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
