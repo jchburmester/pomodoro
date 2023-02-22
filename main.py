@@ -19,10 +19,10 @@ logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
 from utils.subfolder_creation import create_subfolder
 from utils.preprocessing import Preprocessing
-from utils.custom_callback import CSVLogger
 from utils.config_creator import base_line, random_config
 from utils.mixup import mixup
 from utils.cutmix import cutmix
+from utils.callback import SMICallback
 from models.resnet50 import load_resnet50
 from models.convnextv1 import load_convnextv1
 
@@ -89,7 +89,7 @@ y_train = tf.keras.utils.to_categorical(y_train, 100)
 ############################ Preprocessing ##########################################
 #####################################################################################
 
-parameters['augmentation'] = 'mixup'
+parameters['augmentation'] = 'None'
 
 if parameters['augmentation'] == 'mixup':
     mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED).batch(1)
@@ -213,15 +213,17 @@ optimizer_momentum = parameters['optimizer_momentum']
 ############################ Optimizer ##############################################
 #####################################################################################
 
+parameters['optimizer'] = 'AdamW'
+
 # Pick optimizer
 if parameters['optimizer'] == 'SGD':
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=learning_rate_schedule,
-        momentum=optimizer_momentum)
+        momentum=float(optimizer_momentum))
 elif parameters['optimizer'] == 'RMSProp':
     optimizer = tf.keras.optimizers.RMSprop(
         learning_rate=learning_rate_schedule,
-        momentum=optimizer_momentum)
+        momentum=float(optimizer_momentum))
 elif parameters['optimizer'] == 'Adam':
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=learning_rate_schedule)
@@ -234,13 +236,22 @@ elif parameters['optimizer'] == 'AdamW':
 ############################ Training ###############################################
 #####################################################################################
 
+parameters['quantization'] = 'None'
+
 if parameters['quantization'] == 'pre':
+    # Convert the data to float16
+    train_ds = train_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
+    val_ds = val_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
+    test_ds = test_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
+
     quantize_model = tfmot.quantization.keras.quantize_model
     combined_model = quantize_model(combined_model.layers[1])
 
 combined_model.build(input_shape=(None, data.as_numpy_iterator().next()[0].shape[1],
                     data.as_numpy_iterator().next()[0].shape[2],
                     data.as_numpy_iterator().next()[0].shape[3])) 
+
+parameters['internal_optimizations'] = 'None'
 
 if parameters['internal_optimizations'] == 'jit_compilation':
     combined_model.compile(
@@ -257,13 +268,17 @@ else:
         jit_compile=False
     )
 
+print(train_ds.element_spec)
+print(val_ds.element_spec)
+
 # Train the model
 combined_model.fit(
     train_ds,
     validation_data=val_ds,
     epochs=args.epochs,
-    callbacks=[CSVLogger(os.path.join(run_dir, 'logs.csv'))]
+    callbacks=[SMICallback()],
 )
+
 exit()
 #####################################################################################
 ############################ Post Quantization ######################################

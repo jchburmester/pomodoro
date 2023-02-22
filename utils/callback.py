@@ -19,11 +19,11 @@ class SMICallback(tf.keras.callbacks.Callback):
             if self.gpu_available:
                 print('Using: ',output.strip(),'\n')
 
-        except subprocess.CalledProcessError:
+        except:
             pass
 
         if not self.gpu_available:
-            print('No GPU available, SMICallback will not log GPU metrics' + '\n')
+            print('\n' + 'No GPU available, SMICallback will not log GPU metrics' + '\n')
 
     def on_train_begin(self, logs=None):
         # Find the latest run folder

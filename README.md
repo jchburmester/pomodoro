@@ -3,6 +3,7 @@
 Open topics 10/02
 =================
 
+!: tf optimizer AdamW is not compatible with tf METAL (for MacOS) !! Say this in the report in case they use MacOS. 
 1. Miro Board: create diagram to show training / logging pipeline. [Marlena]
 2. Draft overleaf report
 3. Get GPU logging running [Max]
