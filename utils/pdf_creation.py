@@ -1,10 +1,12 @@
 from borb.pdf import SingleColumnLayout
 from borb.pdf import FixedColumnWidthTable
 from borb.pdf import Paragraph
+from borb.pdf import HeterogeneousParagraph
 from borb.pdf import TableCell
 from borb.pdf import Document
 from borb.pdf import Page
 from borb.pdf import PDF
+from borb.pdf.canvas.font import Font
 import yaml
 from yaml.loader import SafeLoader
 import numpy as np
@@ -62,6 +64,19 @@ def create_table_fivebest(layout, mode="acc"):
     
     elif mode == "acc" :
         # create accuracy table
+        layout.add(
+            HeterogeneousParagraph(
+                [
+                    ("Table 1:", Font(size=12, bold=True)),
+                    (
+                        "The five best runs according to accuracy. Accuracy, GPU values, number of parameters and energy quotient are listed for each.", Font=(size=12),
+                    ),
+                ],
+                text_alignment=True, 
+                border_bottom=False,
+            )
+        )
+
         layout.add(
             FixedColumnWidthTable(number_of_columns=6, number_of_rows=6, 
                                 # first column should be smaller than remaining
