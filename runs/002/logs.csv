@@ -1,0 +1,2 @@
+epoch,time,loss,accuracy,val_loss,val_accuracy,gpu_power_W,gpu_temp_C,gpu_util_%
+pre,2023-02-22 16:37:18,0,0,0,0,N/A,N/A,N/A

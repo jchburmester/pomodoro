@@ -1,13 +1,14 @@
 from borb.pdf import SingleColumnLayout
 from borb.pdf import FixedColumnWidthTable
 from borb.pdf import Paragraph
-from borb.pdf import HeterogeneousParagraph
 from borb.pdf import TableCell
+from borb.pdf import InlineFlow
+from borb.pdf import ChunkOfText
 from borb.pdf import Document
 from borb.pdf import Page
 from borb.pdf import PDF
-from borb.pdf.canvas.font import Font
 import yaml
+import csv
 from yaml.loader import SafeLoader
 import numpy as np
 from decimal import Decimal
@@ -18,11 +19,11 @@ from decimal import Decimal
 TO-DO: 
 - (in the end) transfer path from main and delete path in main call (bottom line of this file)
 
-- Tabellenüberschriften
-- replace acc and gpu tables with real values
+- Tabellenüberschriften [x]
+- replace acc and gpu tables with real values [x]
+- get run number of head folder
 - heatmap
 - loss & accuracy plots
-- (plot w&b)
 - 70/80/90 accuracy und Auto/Mikrowellen GPU
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -45,8 +46,26 @@ def read_params_yaml(yaml_file):
 
     return params_keys, params_values
 
+def read_logs(csv_file):
+    # Opening the csv file and convert into dictionary
+    csv_file = open(csv_file)
+    csv_reader = csv.DictReader(csv_file)
+    data = {}
+    for row in csv_reader:
+        data.update(row)
+    csv_file.close()
 
-def create_table_fivebest(layout, mode="acc"):
+    return data
+
+    """
+    with open(csv_file, newline='') as csvfile:
+        spamreader = csv.DictReader(csvfile, delimiter=' ', quotechar='|')
+        for row in spamreader:
+            print(', '.join(row))
+    """
+
+
+def create_table_fivebest(layout, first, second, third, fourth, fifth, mode="acc"):
     """
     Creates a table that shows the 5 best runs for the specified mode.
 
@@ -63,22 +82,14 @@ def create_table_fivebest(layout, mode="acc"):
         return
     
     elif mode == "acc" :
-        # create accuracy table
-        layout.add(
-            HeterogeneousParagraph(
-                [
-                    ("Table 1:", Font(size=12, bold=True)),
-                    (
-                        "The five best runs according to accuracy. Accuracy, GPU values, number of parameters and energy quotient are listed for each.", Font=(size=12),
-                    ),
-                ],
-                text_alignment=True, 
-                border_bottom=False,
-            )
-        )
 
+        # table heading
+        layout.add(Paragraph("Table 1: The five best runs according to accuracy.",
+                             font="Helvetica-Bold", font_size=10))
+
+        # acc table
         layout.add(
-            FixedColumnWidthTable(number_of_columns=6, number_of_rows=6, 
+            FixedColumnWidthTable(number_of_columns=6, number_of_rows=6,
                                 # first column should be smaller than remaining
                                 column_widths=[Decimal(0.2), Decimal(1), Decimal(1), Decimal(1), Decimal(1), Decimal(1)])
             .add(
@@ -93,42 +104,58 @@ def create_table_fivebest(layout, mode="acc"):
             .add(Paragraph("GPU (in kWh)", font="Helvetica-Bold"))
             .add(Paragraph("Number of Parameters", font="Helvetica-Bold"))
             .add(Paragraph("Energy Quotient", font="Helvetica-Bold"))
+            
+            # best run according to accuracy
             .add(Paragraph("1"))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(first.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(first.get('gpu_power_W'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # second best run
             .add(Paragraph("2."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(second.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(second.get('gpu_power_W'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # third best run
             .add(Paragraph("3."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(third.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(third.get('gpu_power_W'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # fourth best run
             .add(Paragraph("4."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(fourth.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(fourth.get('gpu_power_W'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # fifth best run
             .add(Paragraph("5."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+            .add(Paragraph(fifth.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(fifth.get('gpu_power_W'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
             # set padding on all cells
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
+            # set padding on all cells
+            .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
 
-    else:        
-        # create gpu table
+    else:       
+        # table heading
+        layout.add(Paragraph("Table 2: The five best runs according to GPU.",
+                             font="Helvetica-Bold", font_size=10))
+        
+        # gpu table
         layout.add(
             FixedColumnWidthTable(number_of_columns=6, number_of_rows=6, 
                                 # first column should be smaller than remaining
@@ -145,44 +172,66 @@ def create_table_fivebest(layout, mode="acc"):
             .add(Paragraph("Accuracy (in %)", font="Helvetica-Bold"))
             .add(Paragraph("Number of Parameters", font="Helvetica-Bold"))
             .add(Paragraph("Energy Quotient", font="Helvetica-Bold"))
+
+            # best run according to gpu
             .add(Paragraph("1"))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(first.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(first.get('accuracy'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # second best run
             .add(Paragraph("2."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(second.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(second.get('accuracy'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # third best run
             .add(Paragraph("3."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(third.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(third.get('accuracy'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # fourth best run
             .add(Paragraph("4."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
+            .add(Paragraph(fourth.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(fourth.get('accuracy'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+
+            # fifth best run
             .add(Paragraph("5."))
             .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph("gpu", font="Helvetica-oblique"))
+            .add(Paragraph(fifth.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(fifth.get('accuracy'), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
             # set padding on all cells
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
 
-def create_table_params(layout, params, vals):
+def create_table_params(layout, params, vals, mode="acc"):
     """
     Creates a table that displays the parameters of the winning run.
     """    
+
+    # table heading according to mode
+    if mode != "acc" and mode != "gpu":
+        print("Mode must be either 'acc' or 'gpu'")
+        return
+    elif(mode=="acc"):
+        layout.add(Paragraph("Table 3: Parameter values for the winning run in accuracy.",
+                             font="Helvetica-Bold", font_size=10))
+    else:
+        layout.add(Paragraph("Table 3: Parameter values for the winning run in GPU.",
+                             font="Helvetica-Bold", font_size=10))
+        
     layout.add(
         FixedColumnWidthTable(number_of_columns=2, number_of_rows=14)
 
@@ -218,19 +267,28 @@ def create_table_params(layout, params, vals):
     )
 
 
-def main(params_path):
+def main(params_path, logs_path):
 
-    first_params, first_values = read_params_yaml(params_path)
+    first_acc_params, first_acc_values = read_params_yaml(params_path)
+    first_gpu_params, first_gpu_values = read_params_yaml(params_path)
+
+    logs_first = read_logs(logs_path)
+    logs_second = read_logs(logs_path)
+    logs_third = read_logs(logs_path)
+    logs_fourth = read_logs(logs_path)
+    logs_fifth = read_logs(logs_path)
 
     # pdf setup
     document = Document()
     page = Page()
     document.add_page(page)
     layout = SingleColumnLayout(page)
+    #layout.vertical_margin = page.get_page_info().get_height() * Decimal(0.01)
 
-    create_table_fivebest(layout, mode="acc")
-    create_table_fivebest(layout, mode="gpu")
-    create_table_params(layout, first_params, first_values)
+    create_table_fivebest(layout, logs_first, logs_second, logs_third, logs_fourth, logs_fifth, mode="acc")
+    create_table_fivebest(layout, logs_first, logs_second, logs_third, logs_fourth, logs_fifth, mode="gpu")
+    create_table_params(layout, first_acc_params, first_acc_values, mode="acc")
+    create_table_params(layout, first_gpu_params, first_gpu_values, mode="gpu")
 
     # store
     with open("result.pdf", "wb") as out_file_handle:
@@ -240,6 +298,7 @@ def main(params_path):
 if __name__ == "__main__":
     
     ### !!! delete following line later and instead transfer path from main
-    path = "C:/Users/marle/Documents/Studium/Kurse/IANNwTF/pomodoro/pomodoro/runs/001/parameters.yaml"
+    yamlpath = "C:/Users/marle/Documents/Studium/Kurse/IANNwTF/pomodoro/pomodoro/runs/002/parameters.yaml"
+    csvpath = "C:/Users/marle/Documents/Studium/Kurse/IANNwTF/pomodoro/pomodoro/runs/002/logs.csv"
     
-    main(path)
+    main(yamlpath, csvpath)
