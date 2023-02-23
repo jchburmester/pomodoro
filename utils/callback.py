@@ -7,7 +7,7 @@ import tensorflow as tf
 import time
 
 class SMICallback(tf.keras.callbacks.Callback):
-    def __init__(self, interval=2):
+    def __init__(self, interval=1):
         super(SMICallback, self).__init__()
         self.interval = interval
         self.gpu_available = False
