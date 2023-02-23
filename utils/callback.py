@@ -12,7 +12,7 @@ class SMICallback(tf.keras.callbacks.Callback):
         self.interval = interval
         self.gpu_available = False
 
-        # Check if there is a GPU available
+        # Check if there is a GPU available (we could also check this with tf.test.is_gpu_available)
         try:
             output = subprocess.check_output(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'])
             self.gpu_available = bool(output.strip())
