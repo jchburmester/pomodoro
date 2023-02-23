@@ -1,10 +1,14 @@
 # Pomodoro
 
+Known bugs:
+- global policy float 16 does not work with experimental optimizers (AdamW), maybe works in tf 2.10
+- tf optimizer AdamW is not compatible with tf METAL (for MacOS) !! Say this in the report in case they use MacOS. (Does not work with tf-macos 2.9.2, tf-metal 0.5.0)
+->> Changed to AdamW from tfa instead of experimental AdamW from tf (seems to be working now), dont know about Macos
+- I think minmax and normalization are the same thing. Rewrite minmax to do the same thing as sklearn minmax.
+
+
 Open topics 10/02
 =================
-
-!: tf optimizer AdamW is not compatible with tf METAL (for MacOS) !! Say this in the report in case they use MacOS. (Does not work with tf-macos 2.9.2, tf-metal 0.5.0)
-
 1. Miro Board: create diagram to show training / logging pipeline. [Marlena]
 2. Draft overleaf report
 3. Get GPU logging running [Max]
