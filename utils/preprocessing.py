@@ -52,14 +52,14 @@ class Preprocessing(tf.keras.layers.Layer):
                 self.aug_names.append(i[0])
                 self.prepro_layers.append(i[1])
             
-            print("Applied augmentation steps: ")
+            print('\n'+"Applied augmentation steps: ")
             print(*self.aug_names, sep=", ")
 
         # placeholder layer if no preprocessing layer is added or preprocessing is new partitioning
         elif random == False:
             self.prepro_layers = []
             self.prepro_layers.append(tf.keras.layers.Lambda(lambda x: x))
-            print('Added placeholder layer')
+            print('\n'+'Added placeholder layer')
 
     @tf.function
     def call(self,x):
