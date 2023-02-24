@@ -3,7 +3,7 @@ configuration:
     values:
     - None
     - standardization
-    - normalization
+    - robust_scaling
     - minmax
   augmentation:
     values:
