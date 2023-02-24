@@ -9,8 +9,6 @@ def cutmix(train_ds_one, train_ds_two):
 
     # Get a batch of images and labels from the dataset
     (image1, label1), (image2, label2) = train_ds_one, train_ds_two
-    AUTO = tf.data.AUTOTUNE
-    BATCH_SIZE = 32
     IMG_SIZE = image1.shape[1]
 
     # Sample lambda
