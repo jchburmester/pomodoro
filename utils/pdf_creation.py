@@ -23,7 +23,7 @@ TO-DO:
 - replace acc and gpu tables with real values [x]
 - get run number of head folder
 - heatmap
-- loss & accuracy plots
+- loss & accuracy plots: für gpu pre und post einbeziehen, für loss und accuracy weglassen
 - 70/80/90 accuracy und Auto/Mikrowellen GPU
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
