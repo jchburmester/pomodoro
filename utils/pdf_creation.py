@@ -2,15 +2,16 @@ from borb.pdf import SingleColumnLayout
 from borb.pdf import FixedColumnWidthTable
 from borb.pdf import Paragraph
 from borb.pdf import TableCell
-from borb.pdf import InlineFlow
-from borb.pdf import ChunkOfText
 from borb.pdf import Document
 from borb.pdf import Page
 from borb.pdf import PDF
+from borb.pdf import Chart
 import yaml
 import csv
 from yaml.loader import SafeLoader
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from decimal import Decimal
 
 """
@@ -19,16 +20,77 @@ from decimal import Decimal
 TO-DO: 
 - (in the end) transfer path from main and delete path in main call (bottom line of this file)
 
-- Tabellenüberschriften [x]
-- replace acc and gpu tables with real values [x]
 - get run number of head folder
 - heatmap
-- loss & accuracy plots: für gpu pre und post einbeziehen, für loss und accuracy weglassen
 - 70/80/90 accuracy und Auto/Mikrowellen GPU
+
+- Include this in credits: https://github.com/jorisschellekens/borb-examples#321-fixedcolumnwidthtable
+
+- Loss plots: Title, for which runs
+- GPU: Title, for which runs, which GPU variables
+- Accuracy plots: Title, for which runs
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 """
+
+def create_plot_loss(logs):
+
+    # exclude the pretraining and posttraining values for the loss plot
+    epochs = logs["epoch"][1:-1].tolist()
+    train_loss = logs["loss"][1:-1].tolist()
+    val_loss = logs["val_loss"][1:-1].tolist()
+
+    # plot
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(epochs, train_loss, label="Training Loss")
+    ax.plot(epochs, val_loss, label="Validation Loss")
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel("Loss")
+    ax.set_title("Loss plot")
+    ax.legend()
+
+    return plt.gcf()
+
+
+def create_plot_acc(logs):
+
+    # exclude the pretraining and posttraining values for the accuracy plot
+    epochs = logs["epoch"][1:-1].tolist()
+    train_acc = logs["accuracy"][1:-1].tolist()
+    val_acc = logs["val_accuracy"][1:-1].tolist()
+    
+    # plot
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(epochs, train_acc, label="Training Accuracy")
+    ax.plot(epochs, val_acc, label="Validation Accuracy")
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel("Accuracy in %")
+    ax.set_title("Accuracy plot")
+    ax.legend()
+
+    return plt.gcf()
+
+
+def create_plot_gpu(logs):
+
+    # include the pretraining and posttraining values for gpu plot
+    epochs = logs["epoch"].tolist()
+    gpu = logs["gpu_power_W"].tolist()
+    
+    # plot
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(epochs, gpu, label="GPU Power Consumption")
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel("Consumption in kWh")
+    ax.set_title("GPU plot")
+    ax.legend()
+
+    return plt.gcf()
+
 
 def read_params_yaml(yaml_file):
     # Opening the yaml file
@@ -46,6 +108,13 @@ def read_params_yaml(yaml_file):
 
     return params_keys, params_values
 
+
+def read_logs_with_pd(csv_file):
+    df = pd.read_csv(csv_file)
+
+    return df
+
+
 def read_logs(csv_file):
     # Opening the csv file and convert into dictionary
     csv_file = open(csv_file)
@@ -56,13 +125,6 @@ def read_logs(csv_file):
     csv_file.close()
 
     return data
-
-    """
-    with open(csv_file, newline='') as csvfile:
-        spamreader = csv.DictReader(csvfile, delimiter=' ', quotechar='|')
-        for row in spamreader:
-            print(', '.join(row))
-    """
 
 
 def create_table_fivebest(layout, first, second, third, fourth, fifth, mode="acc"):
@@ -278,6 +340,8 @@ def main(params_path, logs_path):
     logs_fourth = read_logs(logs_path)
     logs_fifth = read_logs(logs_path)
 
+    logs_full = read_logs_with_pd(logs_path)
+
     # pdf setup
     document = Document()
     page = Page()
@@ -290,6 +354,10 @@ def main(params_path, logs_path):
     create_table_params(layout, first_acc_params, first_acc_values, mode="acc")
     create_table_params(layout, first_gpu_params, first_gpu_values, mode="gpu")
 
+    layout.add(Chart(create_plot_loss(logs_full), width=Decimal(300), height=Decimal(256)))
+    layout.add(Chart(create_plot_acc(logs_full), width=Decimal(300), height=Decimal(256)))
+    layout.add(Chart(create_plot_gpu(logs_full), width=Decimal(300), height=Decimal(256)))
+
     # store
     with open("result.pdf", "wb") as out_file_handle:
         PDF.dumps(out_file_handle, document)
@@ -300,5 +368,6 @@ if __name__ == "__main__":
     ### !!! delete following line later and instead transfer path from main
     yamlpath = "C:/Users/marle/Documents/Studium/Kurse/IANNwTF/pomodoro/pomodoro/runs/002/parameters.yaml"
     csvpath = "C:/Users/marle/Documents/Studium/Kurse/IANNwTF/pomodoro/pomodoro/runs/002/logs.csv"
-    
-    main(yamlpath, csvpath)
+    csv_full = "C:/Users/marle/Documents/Studium/Kurse/IANNwTF/pomodoro/pomodoro/runs/001/logs.csv"
+
+    main(yamlpath, csv_full)
