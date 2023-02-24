@@ -3,9 +3,6 @@ Main file for the project
 Pomodoro, 3.12.2022
 """
 
-from re import T
-
-
 SEED = 22
 DEBUG = True
 
@@ -81,11 +78,16 @@ with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'w') as f:
     # store seed
     f.write('seed : '+str(SEED)+'\n')
 
+
 #####################################################################################
 ############################ Load data ##############################################
 #####################################################################################
 
 (x_train, y_train), (_, _) = tf.keras.datasets.cifar100.load_data()
+
+#####################################################################################
+############################ Preprocessing ##########################################
+#####################################################################################
 
 if DEBUG:
     x_train = x_train[:1000]
@@ -93,20 +95,25 @@ if DEBUG:
     print('Loaded:', x_train.shape, y_train.shape)
     print('Mean pixel value:',np.mean(x_train[0]))
 
-if parameters['preprocessing'] == 'normalization':
-    x_train = x_train.astype('float32') / 255.
+if parameters['preprocessing'] == 'robust_scaling': # Median of 0 and std of 1
+    x_train = x_train.astype('float32')
+    q25, q75 = np.percentile(x_train, [25, 75], axis=(0, 1, 2))
+    x_train = (x_train - np.median(x_train, axis=(0, 1, 2))) / (q75 - q25)
     if DEBUG:
-        print('Mean pixel value after normalization:',np.mean(x_train[0]))
-elif parameters['preprocessing'] == 'standardization':
+        print('Mean pixel value of 1 sample after robust_scaling:',np.mean(x_train[0]), 'median:', np.median(x_train), 'std:', np.std(x_train))
+
+elif parameters['preprocessing'] == 'standardization': # Mean of 0 and std of 1
     x_train = x_train.astype('float32')
     x_train = (x_train - np.mean(x_train, axis=(0, 1, 2))) / (np.std(x_train, axis=(0, 1, 2)))
     if DEBUG:
-        print('Mean pixel value after standardization:',np.mean(x_train[0]))
-elif parameters['preprocessing'] == 'minmax':
+        print('Mean pixel value of 1 sample after standardization:',np.mean(x_train[0]), 'mean:', np.mean(x_train), 'std:', np.std(x_train))
+
+elif parameters['preprocessing'] == 'minmax': # Between 0 and 1
     x_train = x_train.astype('float32')
     x_train = (x_train - np.min(x_train, axis=(0))) / (np.max(x_train, axis=(0)) - np.min(x_train, axis=(0)))
     if DEBUG:
-        print('Mean pixel value after minmax:',np.mean(x_train[0]))
+        print('Mean pixel value of 1 sample after minmax:',np.mean(x_train[0]), 'mean:', np.mean(x_train), 'std:', np.std(x_train))
+
 elif parameters['preprocessing'] == 'None':
     if DEBUG:
         print('No preprocessing applied')
@@ -114,71 +121,122 @@ elif parameters['preprocessing'] == 'None':
 y_train = tf.keras.utils.to_categorical(y_train, 100)
 
 #####################################################################################
-############################ Preprocessing & Batching ###############################
+############################ Augmentation & Batching ################################
 #####################################################################################
-
-parameters['augmentation'] = 'cutmix'
 
 if DEBUG:
     print('Augmentation:', parameters['augmentation'])
 
 if parameters['augmentation'] == 'cutmix':
-    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=34)
-    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=13)
+    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED + 2)
+    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED + 3)
     mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
     data = mix_ds.map(lambda ds1, ds2: cutmix(ds1, ds2), num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
-    # assert data.as_numpy_iterator().next()[0].shape == x_train.shape[1:4]
+    assert data.as_numpy_iterator().next()[0].shape[1:4] == x_train.shape[1:4]
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
 
     if DEBUG:
         image_batch, label_batch = next(iter(data))
-        plt.figure(figsize=(10, 10))
+        plt.figure(figsize=(5, 5))
         print('\n'+'Mix label map:')
         for i in range(9) if int(parameters['batch_size']) > 1 else range(1):
             ax = plt.subplot(3, 3, i + 1)
             plt.imshow(tf.reshape(image_batch[i], (32, 32, 3)))
             loc = np.where(tf.reshape(label_batch[i], (100,)).numpy() > 0)[0]
-            first_label = float(np.round(tf.reshape(label_batch[i], (100,)).numpy()[loc[0]] * 100, 2))
-            second_label = float(np.round(tf.reshape(label_batch[i], (100,)).numpy()[loc[1]] * 100, 2))
-            print(f'Label {loc[0]} = {first_label}% and Label {loc[1]} = {second_label}%')
+            try: 
+                first_loc = loc[0]
+            except IndexError:
+                first_loc = 0
+            try:
+                second_loc = loc[1]
+            except IndexError:
+                second_loc = 0
+            try:
+                first_label = float(np.round(tf.reshape(label_batch[i], (100,)).numpy()[loc[0]] * 100, 2))
+            except IndexError:
+                first_label = 0
+            try:
+                second_label = float(np.round(tf.reshape(label_batch[i], (100,)).numpy()[loc[1]] * 100, 2))
+            except IndexError:
+                second_label = 0
+            if len(loc) == 1:
+                second_label = 0
+            print(f'Label {first_loc} = {first_label}% and Label {second_loc} = {second_label}%')
             plt.axis("off")
         plt.show()
 
+    if DEBUG:
+        print('\n')
+        print('Mean pixel value of 1 sample after cutmix:',np.mean(data.as_numpy_iterator().next()[0][0]), 'mean of all:', np.mean(data.as_numpy_iterator().next()[0]), 'std of all:', np.std(data.as_numpy_iterator().next()[0]))
+
 elif parameters['augmentation'] == 'mixup':
-    x_train = x_train.astype('float32') / 255. 
+
+    if parameters['preprocessing'] == 'None':
+        x_train = x_train.astype('float32')
+        x_train = x_train / 255.0
 
     if DEBUG:
         print('Mean pixel value before mixup:',np.mean(x_train[0]))
 
-    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED).batch(1)
-    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED).batch(1)
+    mix_ds1 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED + 2)
+    mix_ds2 = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(1024, seed=SEED + 3)
     mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
-    data = mix_ds.map(lambda ds1, ds2: mixup(ds1, ds2, 0.2), num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    assert data.as_numpy_iterator().next()[0].shape == x_train.shape[1:4]
+    data = mix_ds.map(lambda ds1, ds2: mixup(ds1, ds2, 0.2), num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
+    # assert data.as_numpy_iterator().next()[0].shape == x_train.shape[1:4]
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
 
-    data = data.map(lambda image, label: (image * 255., label), num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-    if DEBUG:
-        print('Mean pixel value after mixup:',np.mean(data.as_numpy_iterator().next()[0][0]))
-        plt.figure(figsize=(10, 10))
-        for i, (image, label) in enumerate(data.take(9)):
+    if DEBUG:   
+        image_batch, label_batch = next(iter(data))
+        plt.figure(figsize=(5, 5))
+        print('\n'+'Mix label map:')
+        for i in range(9) if int(parameters['batch_size']) > 1 else range(1):
             ax = plt.subplot(3, 3, i + 1)
-            plt.imshow(image)
-            plt.title(np.argmax(label))
+            plt.imshow(tf.reshape(image_batch[i], (32, 32, 3)))
+            loc = np.where(tf.reshape(label_batch[i], (100,)).numpy() > 0)[0]
+            try: 
+                first_loc = loc[0]
+            except IndexError:
+                first_loc = 0
+            try:
+                second_loc = loc[1]
+            except IndexError:
+                second_loc = 0
+            try:
+                first_label = float(np.round(tf.reshape(label_batch[i], (100,)).numpy()[loc[0]] * 100, 2))
+            except IndexError:
+                first_label = 0
+            try:
+                second_label = float(np.round(tf.reshape(label_batch[i], (100,)).numpy()[loc[1]] * 100, 2))
+            except IndexError:
+                second_label = 0
+            if len(loc) == 1:
+                second_label = 0
+            print(f'Label {first_loc} = {first_label}% and Label {second_loc} = {second_label}%')
             plt.axis("off")
         plt.show()
+
+    if DEBUG:
+        print('\n')
+        print('Mean pixel value of 1 sample after mixup:',np.mean(data.as_numpy_iterator().next()[0][0]), 'mean of all:', np.mean(data.as_numpy_iterator().next()[0]), 'std of all:', np.std(data.as_numpy_iterator().next()[0]))
+
+    if parameters['preprocessing'] == 'None':
+        # Convert back to 0-255
+        data = data.map(lambda x, y: (x * 255, y), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+        if DEBUG:
+            print('Mean pixel value of 1 sample after * 255:',np.mean(data.as_numpy_iterator().next()[0][0]), 'mean of all:', np.mean(data.as_numpy_iterator().next()[0]), 'std of all:', np.std(data.as_numpy_iterator().next()[0]))
 
 elif parameters['augmentation'] == 'random':
     data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=True)
+
 elif parameters['augmentation'] == 'None': 
     data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
 
 # Shuffle the data
 data = data.shuffle(1024, seed=SEED)
-exit()
+
 #####################################################################################
 ############################ Precision casting ######################################
 #####################################################################################
@@ -248,22 +306,13 @@ if parameters['lr_schedule'] == 'constant':
     learning_rate_schedule = learning_rate
 elif parameters['lr_schedule'] == 'exponential':
     learning_rate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        learning_rate,
-        decay_steps=10000,
-        decay_rate=0.96,
-        staircase=True)
+        learning_rate)
 elif parameters['lr_schedule'] == 'polynomial':
     learning_rate_schedule = tf.keras.optimizers.schedules.PolynomialDecay(
-        learning_rate,
-        decay_steps=10000,
-        end_learning_rate=0.0001,
-        power=1.0,
-        cycle=False)
+        learning_rate)
 elif parameters['lr_schedule'] == 'cosine':
     learning_rate_schedule = tf.keras.optimizers.schedules.CosineDecay(
-        learning_rate,
-        decay_steps=10000,
-        alpha=0.0)
+        learning_rate)
 
 #####################################################################################
 ############################ Optimizer Momentum #####################################

@@ -4,8 +4,9 @@ Known bugs:
 - global policy float 16 does not work with experimental optimizers (AdamW), maybe works in tf 2.10
 - tf optimizer AdamW is not compatible with tf METAL (for MacOS) !! Say this in the report in case they use MacOS. (Does not work with tf-macos 2.9.2, tf-metal 0.5.0)
 ->> Changed to AdamW from tfa instead of experimental AdamW from tf (seems to be working now), dont know about Macos
-- I think minmax and normalization are the same thing. Rewrite minmax to do the same thing as sklearn minmax.
 
+- I will remove all the decay params for AdamW. Explain in the report that while this is extremely important for large models, it just doesnt make sense to include in a parameter search that only gets activate when AdamW is chose // and or when using smaller models.
+- I will remove post quantization methods. Explain in the paper that the future of green computing probably lies on quantization, but it is in such an early and non-compatible stage that it was not usable in this project, but a very important part for future green energy tranining bla bla.
 
 Open topics 10/02
 =================
