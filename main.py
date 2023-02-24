@@ -371,7 +371,7 @@ combined_model.build(input_shape=(None,
                     data.as_numpy_iterator().next()[0].shape[2],
                     data.as_numpy_iterator().next()[0].shape[3])) 
 
-parameters['internal_optimizations'] = 'None' # Here
+parameters['internal_optimizations'] = 'jit_compilation' # Here
 
 if parameters['internal_optimizations'] == 'jit_compilation':
     combined_model.compile(
@@ -399,7 +399,7 @@ combined_model.fit(
     epochs=args.epochs,
     callbacks=[SMICallback()],
 )
-
+exit()
 #####################################################################################
 ############################ Post Quantization ######################################
 #####################################################################################
