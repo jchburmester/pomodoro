@@ -20,9 +20,9 @@ configuration:
   batch_size:
     values:
     - 1
-    - 16
     - 32
     - 64
+    - 128
   partitioning:
     values:
     - 60-20-20

@@ -8,6 +8,10 @@ Known bugs:
 - I will remove all the decay params for AdamW. Explain in the report that while this is extremely important for large models, it just doesnt make sense to include in a parameter search that only gets activate when AdamW is chose // and or when using smaller models.
 - I will remove post quantization methods. Explain in the paper that the future of green computing probably lies on quantization, but it is in such an early and non-compatible stage that it was not usable in this project, but a very important part for future green energy tranining bla bla.
 
+- Global policy float 16 is not compatible with pre-quantization, so if global policy float 16 is chosen, pre-quantization will be deactivated. (This is not a bug, but a feature, wow)
+
+- jit-compilation does not work on MacOS, METAL (maybe on other systems too).
+
 Open topics 10/02
 =================
 1. Miro Board: create diagram to show training / logging pipeline. [Marlena]

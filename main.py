@@ -78,7 +78,6 @@ with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'w') as f:
     # store seed
     f.write('seed : '+str(SEED)+'\n')
 
-
 #####################################################################################
 ############################ Load data ##############################################
 #####################################################################################
@@ -90,8 +89,8 @@ with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'w') as f:
 #####################################################################################
 
 if DEBUG:
-    x_train = x_train[:1000]
-    y_train = y_train[:1000]
+    x_train = x_train[:10000]
+    y_train = y_train[:10000]
     print('Loaded:', x_train.shape, y_train.shape)
     print('Mean pixel value:',np.mean(x_train[0]))
 
@@ -227,11 +226,11 @@ elif parameters['augmentation'] == 'mixup':
             print('Mean pixel value of 1 sample after * 255:',np.mean(data.as_numpy_iterator().next()[0][0]), 'mean of all:', np.mean(data.as_numpy_iterator().next()[0]), 'std of all:', np.std(data.as_numpy_iterator().next()[0]))
 
 elif parameters['augmentation'] == 'random':
-    data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    data = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=True)
 
 elif parameters['augmentation'] == 'None': 
-    data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    data = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
     preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
 
 # Shuffle the data
@@ -245,12 +244,6 @@ if parameters['precision'] == 'global_policy_float16':
     tf.keras.mixed_precision.set_global_policy('mixed_float16')
 else:
     data = data.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype(str(parameters['precision']))), y))
-
-#####################################################################################
-############################ Batch size #############################################
-#####################################################################################
-
-data = data.batch(int(parameters['batch_size']))
 
 #####################################################################################
 ############################ Partitioning ###########################################
@@ -306,13 +299,18 @@ if parameters['lr_schedule'] == 'constant':
     learning_rate_schedule = learning_rate
 elif parameters['lr_schedule'] == 'exponential':
     learning_rate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        learning_rate)
+        learning_rate, 
+        decay_steps=1000, # This should be another parameter
+        decay_rate=0.96,
+        staircase=True)
 elif parameters['lr_schedule'] == 'polynomial':
     learning_rate_schedule = tf.keras.optimizers.schedules.PolynomialDecay(
-        learning_rate)
+        learning_rate, 
+        decay_steps=1000,)
 elif parameters['lr_schedule'] == 'cosine':
     learning_rate_schedule = tf.keras.optimizers.schedules.CosineDecay(
-        learning_rate)
+        learning_rate, 
+        decay_steps=1000,)
 
 #####################################################################################
 ############################ Optimizer Momentum #####################################
@@ -324,8 +322,6 @@ optimizer_momentum = parameters['optimizer_momentum']
 #####################################################################################
 ############################ Optimizer ##############################################
 #####################################################################################
-
-parameters['optimizer'] = 'AdamW'
 
 # Pick optimizer
 if parameters['optimizer'] == 'SGD':
@@ -341,17 +337,16 @@ elif parameters['optimizer'] == 'Adam':
         learning_rate=learning_rate_schedule)
 elif parameters['optimizer'] == 'AdamW':
     optimizer = tfa.optimizers.AdamW(
-        learning_rate=learning_rate_schedule,
-        weight_decay=float(parameters['weight_decay'])) # Do we really want a config only for AdamW?
+        learning_rate=learning_rate_schedule, 
+        weight_decay=0.001)
 
 #####################################################################################
-############################ Training ###############################################
+############################ Pre-quantization #######################################
 #####################################################################################
 
-parameters['quantization'] = 'None'
+if parameters['quantization'] == 'pre' and parameters['precision'] != 'global_policy_float16':
 
-if parameters['quantization'] == 'pre':
-    # Convert the data to float16
+    # Convert the data to float16 (needed for quantization)
     train_ds = train_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
     val_ds = val_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
     test_ds = test_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
@@ -359,11 +354,24 @@ if parameters['quantization'] == 'pre':
     quantize_model = tfmot.quantization.keras.quantize_model
     combined_model = quantize_model(combined_model.layers[1])
 
-combined_model.build(input_shape=(None, data.as_numpy_iterator().next()[0].shape[1],
+    print('\n'+'Pre-quantizing model.'+'\n')
+
+elif parameters['quantization'] == 'pre' and parameters['precision'] == 'global_policy_float16':
+    print('\n'+'Not quantizing because of global policy float16.'+'\n')
+
+else: 
+    print('\n'+'No pre-quantizing.'+'\n')
+
+#####################################################################################
+############################ Training ###############################################
+#####################################################################################
+
+combined_model.build(input_shape=(None, 
+                    data.as_numpy_iterator().next()[0].shape[1],
                     data.as_numpy_iterator().next()[0].shape[2],
                     data.as_numpy_iterator().next()[0].shape[3])) 
 
-parameters['internal_optimizations'] = 'None'
+parameters['internal_optimizations'] = 'None' # Here
 
 if parameters['internal_optimizations'] == 'jit_compilation':
     combined_model.compile(
@@ -380,8 +388,9 @@ else:
         jit_compile=False
     )
 
-print(train_ds.element_spec)
-print(val_ds.element_spec)
+# Store the model parameters (model size) in a yaml file
+with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
+    f.write('n_parameters: ' + str(combined_model.count_params()))
 
 # Train the model
 combined_model.fit(
@@ -391,17 +400,18 @@ combined_model.fit(
     callbacks=[SMICallback()],
 )
 
-exit()
 #####################################################################################
 ############################ Post Quantization ######################################
 #####################################################################################
-
+parameters['quantization'] = 'post_weights'
 # Weights
 if parameters['quantization'] == 'post_weights':
     converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_quant_model = converter.convert()
-    combined_model = tf.keras.models.load_model(tflite_quant_model)
+    
+    # Print the new number of parameters of the model 
+    
 
 # Weights & activations
 if parameters['quantization'] == 'post_weights_and_activations':
@@ -415,6 +425,7 @@ if parameters['quantization'] == 'post_weights_and_activations':
     tflite_quant_model = converter.convert()
     combined_model = tf.keras.models.load_model(tflite_quant_model)
 
+exit()
 #####################################################################################
 ############################ Pruning ################################################
 #####################################################################################
@@ -463,12 +474,4 @@ if parameters['internal_optimizations'] == 'weight_clustering':
         metrics=['accuracy']
     )
 
-# save_metric(model.evaluate(test_ds))
-
-# save metrics to csv: run#, model_name, preprocessing, augmentation, precision, batch, partitioning, 
-# lr, lr_schedule, optimizer, optimizer_momentum, quantization, internal_optimizations, train_accuracy, 
-# test_accuracy, loss, #parameters, time_elapsed2
-
-# save metrics to yaml (in run folder): run#, model_name, preprocessing, augmentation, precision, batch, 
-# partitioning, lr, lr_schedule, optimizer, optimizer_momentum, quantization, internal_optimizations,  
-# train_accuracy, test_accuracy, loss, #parameters, time_elapsed
+#####################################################################################
