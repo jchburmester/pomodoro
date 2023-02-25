@@ -338,13 +338,11 @@ elif parameters['optimizer'] == 'Adam':
 elif parameters['optimizer'] == 'AdamW':
     optimizer = tfa.optimizers.AdamW(
         learning_rate=learning_rate_schedule, 
-        weight_decay=0.001)
+        weight_decay=0.001) # Standard weight decay for AdamW (from tf docs)
 
 #####################################################################################
 ############################ Pre-quantization #######################################
 #####################################################################################
-
-# parameters['quantization'] = 'pre'
 
 if parameters['quantization'] == 'pre' and parameters['precision'] != 'global_policy_float16':
 
@@ -372,8 +370,6 @@ combined_model.build(input_shape=(None,
                     data.as_numpy_iterator().next()[0].shape[1],
                     data.as_numpy_iterator().next()[0].shape[2],
                     data.as_numpy_iterator().next()[0].shape[3])) 
-
-# parameters['internal_optimizations'] = 'jit_compilation' # Here
 
 if parameters['internal_optimizations'] == 'jit_compilation':
     combined_model.compile(

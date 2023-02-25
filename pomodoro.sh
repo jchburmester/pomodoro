@@ -12,7 +12,7 @@
 #python main.py --epochs 100 --baseline --model resnet50
 echo "Running training..."
 for i in `seq 10`;
-do python main.py --epochs 100 --model resnet50;
+do python main.py --epochs 50 --model resnet50;
 done
 
 ############## Analysis #####################
