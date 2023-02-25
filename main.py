@@ -4,7 +4,7 @@ Pomodoro, 3.12.2022
 """
 
 SEED = 22
-DEBUG = True
+DEBUG = False
 
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -344,6 +344,8 @@ elif parameters['optimizer'] == 'AdamW':
 ############################ Pre-quantization #######################################
 #####################################################################################
 
+# parameters['quantization'] = 'pre'
+
 if parameters['quantization'] == 'pre' and parameters['precision'] != 'global_policy_float16':
 
     # Convert the data to float16 (needed for quantization)
@@ -371,7 +373,7 @@ combined_model.build(input_shape=(None,
                     data.as_numpy_iterator().next()[0].shape[2],
                     data.as_numpy_iterator().next()[0].shape[3])) 
 
-parameters['internal_optimizations'] = 'jit_compilation' # Here
+# parameters['internal_optimizations'] = 'jit_compilation' # Here
 
 if parameters['internal_optimizations'] == 'jit_compilation':
     combined_model.compile(

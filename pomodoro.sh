@@ -8,9 +8,11 @@
 # Then it is happy.
 
 ############## Main script ##################
+#echo "Running baseline..."
+#python main.py --epochs 100 --baseline --model resnet50
 echo "Running training..."
-for i in `seq 2`;
-do python main.py --epochs 10;
+for i in `seq 10`;
+do python main.py --epochs 100 --model resnet50;
 done
 
 ############## Analysis #####################

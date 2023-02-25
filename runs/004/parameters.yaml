@@ -1,15 +1,15 @@
 model: resnet50
-preprocessing: None
+preprocessing: standardization
 augmentation: None
-precision: float16
-batch_size: 1
+precision: float64
+batch_size: 32
 partitioning: 60-20-20
-lr: 0.01
-lr_schedule: constant
+lr: 0.00015
+lr_schedule: polynomial
 optimizer_momentum: 0.0
 optimizer: RMSProp
 weight_decay: 0.01
-quantization: None
+quantization: post_weights
 internal_optimizations: None
 seed : 22
 n_parameters: 23792612
