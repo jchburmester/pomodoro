@@ -19,7 +19,7 @@ configuration:
     - global_policy_float16
   batch_size:
     values:
-    - 1
+    - 4
     - 32
     - 64
     - 128
