@@ -397,7 +397,7 @@ combined_model.fit(
 #####################################################################################
 ############################ Post Quantization ######################################
 #####################################################################################
-parameters['internal'] = 'post_quantization'
+
 if parameters['internal'] == 'post_quantization' and parameters['precision'] != 'global_policy_float16':
 
     # Convert the data to float16 (needed for quantization)
