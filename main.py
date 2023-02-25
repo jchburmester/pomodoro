@@ -4,7 +4,7 @@ Pomodoro, 3.12.2022
 """
 
 SEED = 22
-DEBUG = False
+DEBUG = False    
 
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -397,7 +397,7 @@ combined_model.fit(
 #####################################################################################
 ############################ Post Quantization ######################################
 #####################################################################################
-
+parameters['internal'] = 'post_quantization'
 if parameters['internal'] == 'post_quantization' and parameters['precision'] != 'global_policy_float16':
 
     # Convert the data to float16 (needed for quantization)
@@ -431,6 +431,6 @@ with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
 
 # Save the model test set
 with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
-    f.write('test_accuracy: ' + str(test_acc) + '\n')
+    f.write('test_accuracy: ' + str(round(test_acc, 3)) + '\n')
 
 #####################################################################################

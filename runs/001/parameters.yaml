@@ -8,9 +8,7 @@ lr: 0.01
 lr_schedule: constant
 optimizer_momentum: 0.0
 optimizer: RMSProp
-weight_decay: 0.01
-quantization: None
-internal_optimizations: None
+internal: None
 seed : 22
 n_parameters: 23792612
-test_accuracy: 0.012
+test_accuracy: 0.01
