@@ -13,3 +13,4 @@ quantization: None
 internal_optimizations: None
 seed : 22
 n_parameters: 23792612
+test_accuracy: 0.012

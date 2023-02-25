@@ -53,26 +53,9 @@ configuration:
     - SGD
     - Adam
     - AdamW
-  weight_decay: # See ConvNext2 appendix
-    values:
-    - 0.01
-    - 0.001
-    - 0.0001
-    - 0.00001
-  quantization:
+  internal:
     values:
     - None
-    - pre
-    - post_weights
-    - post_weights_and_activations
-  internal_optimizations:
-    values:
-    - None
-    - weight_pruning
-    - weight_clustering
+    - pre_quantization
+    - post_quantization
     - jit_compilation
-
-# weight pruning might be more beneficial for models 
-# that are deployed on resource-constrained devices, 
-# while weight clustering might be more beneficial 
-# for models that need to be interpretable. !
