@@ -344,7 +344,7 @@ elif parameters['optimizer'] == 'AdamW':
 ############################ Pre-quantization #######################################
 #####################################################################################
 
-if parameters['quantization'] == 'pre' and parameters['precision'] != 'global_policy_float16':
+if parameters['internal'] == 'pre_quantization' and parameters['precision'] != 'global_policy_float16':
 
     # Convert the data to float16 (needed for quantization)
     train_ds = train_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
@@ -356,7 +356,7 @@ if parameters['quantization'] == 'pre' and parameters['precision'] != 'global_po
 
     print('\n'+'Pre-quantizing model.'+'\n')
 
-elif parameters['quantization'] == 'pre' and parameters['precision'] == 'global_policy_float16':
+elif parameters['internal'] == 'pre_quantization' and parameters['precision'] == 'global_policy_float16':
     print('\n'+'Not quantizing because of global policy float16.'+'\n')
 
 else: 
@@ -371,7 +371,7 @@ combined_model.build(input_shape=(None,
                     data.as_numpy_iterator().next()[0].shape[2],
                     data.as_numpy_iterator().next()[0].shape[3])) 
 
-if parameters['internal_optimizations'] == 'jit_compilation':
+if parameters['internal'] == 'jit_compilation':
     combined_model.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.CategoricalCrossentropy(),
@@ -386,10 +386,6 @@ else:
         jit_compile=False
     )
 
-# Store the model parameters (model size) in a yaml file
-with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
-    f.write('n_parameters: ' + str(combined_model.count_params()))
-
 # Train the model
 combined_model.fit(
     train_ds,
@@ -397,79 +393,44 @@ combined_model.fit(
     epochs=args.epochs,
     callbacks=[SMICallback()],
 )
-exit()
+
 #####################################################################################
 ############################ Post Quantization ######################################
 #####################################################################################
-parameters['quantization'] = 'post_weights'
-# Weights
-if parameters['quantization'] == 'post_weights':
-    converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    tflite_quant_model = converter.convert()
-    
-    # Print the new number of parameters of the model 
-    
 
-# Weights & activations
-if parameters['quantization'] == 'post_weights_and_activations':
-    def representative_dataset_gen():
-        for input_value, _ in train_ds.take(100):
-            yield [input_value]
+if parameters['internal'] == 'post_quantization' and parameters['precision'] != 'global_policy_float16':
 
-    converter = tf.lite.TFLiteConverter.from_keras_model(combined_model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.representative_dataset = representative_dataset_gen
-    tflite_quant_model = converter.convert()
-    combined_model = tf.keras.models.load_model(tflite_quant_model)
+    # Convert the data to float16 (needed for quantization)
+    train_ds = train_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
+    val_ds = val_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
+    test_ds = test_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
 
-exit()
-#####################################################################################
-############################ Pruning ################################################
-#####################################################################################
+    quantize_model = tfmot.quantization.keras.quantize_model
+    combined_model = quantize_model(combined_model.layers[1])
 
-if parameters['internal_optimizations'] == 'weight_pruning':
-    prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
-    epochs = 2
-    end_step = np.ceil(train_size / parameters['batch_size']).astype(np.int32) * epochs
+    print('\n'+'Pre-quantizing model.'+'\n')
 
-    # hyperparameters as in the tf documentation
-    pruning_params = {
-        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity = 0.50,
-        final_sparsity = 0.80,              
-        begin_step = 0,                                                               
-        end_step = end_step)
-    }
-    combined_model = prune_low_magnitude(combined_model, **pruning_params)
-    
-    combined_model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
-        metrics=['accuracy']
-    )
+elif parameters['internal'] == 'post_quantization' and parameters['precision'] == 'global_policy_float16':
+    print('\n'+'Not quantizing because of global policy float16.'+'\n')
 
 #####################################################################################
-############################ Weight Clustering ######################################
+############################ Testign ################################################
 #####################################################################################
 
-if parameters['internal_optimizations'] == 'weight_clustering':
-    cluster_weights = tfmot.clustering.keras.cluster_weights
-    CentroidInitialization = tfmot.clustering.keras.CentroidInitialization
+# Evaluate the model on the test data using `evaluate`
+if DEBUG:
+    print('Evaluating model.')
+    test_loss, test_acc = combined_model.evaluate(test_ds, verbose=2)
+    print('\nTest accuracy:', test_acc)
+else:
+    test_loss, test_acc = combined_model.evaluate(test_ds, verbose=0)
 
-    # hyperparameters as in the tf documentation
-    clustering_params = {
-        'number_of_clusters': 16,
-        'cluster_centroids_init': CentroidInitialization.LINEAR
-    }
-    combined_model = cluster_weights(combined_model, **clustering_params)
+# Save the model # parameters (model size)
+with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
+    f.write('n_parameters: ' + str(combined_model.count_params())+'\n')
 
-    # Use smaller learning rate for fine-tuning clustered model
-    opt = tf.keras.optimizers.Adam(learning_rate=1e-5)
-
-    combined_model.compile(
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        optimizer=opt,
-        metrics=['accuracy']
-    )
+# Save the model test set
+with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
+    f.write('test_accuracy: ' + str(test_acc) + '\n')
 
 #####################################################################################
