@@ -408,7 +408,14 @@ if parameters['internal'] == 'post_quantization' and parameters['precision'] != 
     quantize_model = tfmot.quantization.keras.quantize_model
     combined_model = quantize_model(combined_model.layers[1])
 
-    print('\n'+'Pre-quantizing model.'+'\n')
+    combined_model.compile(
+            optimizer = optimizer, 
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            metrics=['accuracy'],
+            jit_compile=False
+    )
+
+    print('\n'+'Post-quantized model.'+'\n')
 
 elif parameters['internal'] == 'post_quantization' and parameters['precision'] == 'global_policy_float16':
     print('\n'+'Not quantizing because of global policy float16.'+'\n')

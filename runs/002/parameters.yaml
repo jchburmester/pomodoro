@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: minmax
+augmentation: None
+precision: float16
+batch_size: 64
+partitioning: 70-15-15
+lr: 0.00625
+lr_schedule: exponential
+optimizer_momentum: 0.0
+optimizer: Adam
+internal: None
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.888
