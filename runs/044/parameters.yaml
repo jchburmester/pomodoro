@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: minmax
+augmentation: mixup
+precision: global_policy_float16
+batch_size: 4
+partitioning: 80-10-10
+lr: 0.00625
+lr_schedule: polynomial
+optimizer_momentum: 0.9
+optimizer: Adam
+internal: jit_compilation
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.183

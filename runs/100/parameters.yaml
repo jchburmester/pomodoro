@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: standardization
+augmentation: cutmix
+precision: global_policy_float16
+batch_size: 4
+partitioning: 80-10-10
+lr: 0.0008
+lr_schedule: cosine
+optimizer_momentum: 0.0
+optimizer: Adam
+internal: pre_quantization
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.02

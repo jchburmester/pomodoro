@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: minmax
+augmentation: cutmix
+precision: float16
+batch_size: 32
+partitioning: 90-5-5
+lr: 0.01
+lr_schedule: cosine
+optimizer_momentum: 0.0
+optimizer: AdamW
+internal: post_quantization
+seed : 22
+n_parameters: 23846055
+test_accuracy: 0.008

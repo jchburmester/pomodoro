@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: minmax
+augmentation: None
+precision: float32
+batch_size: 128
+partitioning: 60-20-20
+lr: 0.0008
+lr_schedule: cosine
+optimizer_momentum: 0.9
+optimizer: RMSProp
+internal: jit_compilation
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.097

@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: standardization
+augmentation: random
+precision: float64
+batch_size: 4
+partitioning: 90-5-5
+lr: 0.00015
+lr_schedule: exponential
+optimizer_momentum: 0.9
+optimizer: RMSProp
+internal: None
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.074

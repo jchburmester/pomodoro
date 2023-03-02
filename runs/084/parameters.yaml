@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: standardization
+augmentation: mixup
+precision: float16
+batch_size: 32
+partitioning: 90-5-5
+lr: 0.0008
+lr_schedule: constant
+optimizer_momentum: 0.9
+optimizer: Adam
+internal: None
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.848

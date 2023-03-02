@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: minmax
+augmentation: None
+precision: float32
+batch_size: 4
+partitioning: 90-5-5
+lr: 0.00625
+lr_schedule: polynomial
+optimizer_momentum: 0.99
+optimizer: SGD
+internal: post_quantization
+seed : 22
+n_parameters: 23846055
+test_accuracy: 0.006

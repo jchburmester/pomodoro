@@ -1,0 +1,14 @@
+model: resnet50
+preprocessing: minmax
+augmentation: cutmix
+precision: global_policy_float16
+batch_size: 128
+partitioning: 70-15-15
+lr: 0.00625
+lr_schedule: exponential
+optimizer_momentum: 0.9
+optimizer: SGD
+internal: jit_compilation
+seed : 22
+n_parameters: 23792612
+test_accuracy: 0.396
