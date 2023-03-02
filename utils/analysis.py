@@ -27,6 +27,7 @@ def get_parameters(run):
 
 def get_5_best_acc():
     val_acc = []
+    best_5_acc_paths = []
 
     for run in os.listdir(os.path.join(parent_dir, 'runs')):
         #parameters_list.append(get_parameters(run))
@@ -36,15 +37,15 @@ def get_5_best_acc():
 
     val_acc = pd.Series(val_acc)
     best_5_runs = val_acc.nlargest(5).index
-    # get best run and print the result
-    best = val_acc.nlargest(5).iloc[0]
-    print(best)
     #best_5_parameters = [parameters_list[i] for i in best_5_runs]
+    for run in best_5_runs:
+        best_5_acc_paths.append(os.path.join(parent_dir, 'runs', str(run)))
 
-    return best_5_runs
+    return best_5_acc_paths
 
 def get_5_lowest_gpu():
     power_draw = []
+    lowest_5_gpu_paths = []
 
     for run in os.listdir(os.path.join(parent_dir, 'runs')):
         logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
@@ -53,7 +54,10 @@ def get_5_lowest_gpu():
     power_draw = pd.Series(power_draw)
     lowest_5_runs = power_draw.nsmallest(5).index
 
-    return lowest_5_runs
+    for run in lowest_5_runs:
+        lowest_5_gpu_paths.append(os.path.join(parent_dir, 'runs', str(run)))
+
+    return lowest_5_gpu_paths
 
 
 if __name__ == '__main__':
