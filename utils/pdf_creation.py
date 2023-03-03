@@ -89,6 +89,18 @@ def create_plot_gpu(logs):
 
     return plt.gcf()
 
+def create_heatmap(df):
+    
+    # create heatmap
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.imshow(df, cmap="hot", interpolation="nearest")
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel("Runs")
+    ax.set_title("Heatmap")
+    
+    return plt.gcf()
+
 
 def read_params_yaml(yaml_file):
     # Opening the yaml file

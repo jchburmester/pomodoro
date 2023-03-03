@@ -421,7 +421,7 @@ elif parameters['internal'] == 'post_quantization' and parameters['precision'] =
     print('\n'+'Not quantizing because of global policy float16.'+'\n')
 
 #####################################################################################
-############################ Testign ################################################
+############################ Testing ################################################
 #####################################################################################
 
 # Evaluate the model on the test data using `evaluate`
@@ -441,3 +441,6 @@ with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'a') as f:
     f.write('test_accuracy: ' + str(round(test_acc, 3)) + '\n')
 
 #####################################################################################
+
+
+

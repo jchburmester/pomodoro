@@ -2,10 +2,34 @@ import os
 import numpy as np
 import pandas as pd
 import yaml
+import seaborn as sns
+import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
+
 
 # set parent directory
 parent_dir = os.path.dirname(os.getcwd())
+
+import yaml
+from yaml.loader import SafeLoader
+
+'''Reading the yaml file with all parameters.'''
+
+# Opening the yaml file
+with open('./config.yaml', 'r') as stream:
+
+    try:
+        # Converting yaml document to python object
+        parameters = yaml.load(stream, Loader=SafeLoader)
+        # Create matrix from dictionary values
+        para_np = np.array([[val for val in p['values']] for p in parameters['configuration'].values()])
+        # Store values
+        config_keys = parameters['configuration'].keys()
+        # create dictionary with all the parameters
+        config_dict = {key: para_np[i] for i, key in enumerate(config_keys)}
+    
+    except yaml.YAMLError as e:
+        print(e)
 
 
 def read_logs_with_pd(csv_file):
@@ -67,31 +91,51 @@ def get_lowest_gpu():
     return lowest_5_runs_dict
 
 
-def get_all_acc():
-    all_val_acc = []
+def get_all_runs():
+    
+    para_np_array = np.array(para_np).flatten()
+    df = pd.DataFrame(columns=para_np_array)
 
-    # get validation accuracy for each run
-    for run in os.listdir(os.path.join(parent_dir, 'runs')):
-        logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
-        all_val_acc.append(logs['val_accuracy'].iloc[-2])
+    # get all runs and sort them by their best validation accuracy (second last row of each run)
+    all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
+    # sort runs by validation accuracy
+    all_runs.sort(key=lambda x: read_logs_with_pd(os.path.join(parent_dir, 'runs', x, 'logs.csv'))['val_accuracy'].iloc[-2], reverse=True)
+    
+    for run in all_runs:
+        try:
+            run_parameters = get_parameters(run)
+            run_parameters_np = np.array([val for val in run_parameters.values()])
+            run_parameters_np = run_parameters_np[1:-3]
 
-    return all_val_acc
+            result = [any(x in s for x in run_parameters_np) for s in para_np_array]
+            df = df.append(pd.Series(result, index=df.columns), ignore_index=True)
+        except:
+            print('Error in run: ', run)
+       
+    return df
 
+def create_heatmap(df):
 
-def get_all_gpu():
-    all_power_draw = []
+    df_array = df.to_numpy(dtype=float)
+    para_np_list = np.array(para_np).flatten().tolist()
 
-    # get power draw for each run
-    for run in os.listdir(os.path.join(parent_dir, 'runs')):
-        logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
-        all_power_draw.append(logs['gpu_power_W'].mean())
+    # Create a heatmap with Seaborn
+    fig, ax = plt.subplots(figsize=(16, 12))
+    sns.heatmap(df_array, cmap='coolwarm', annot=False, fmt='.2f', ax=ax)
 
-    return all_power_draw
+    # Set the axis labels
+    ax.set_xlabel(para_np_list, fontsize=14)
+    ax.set_ylabel('Run, from best to worst', fontsize=14)
 
+    # Set the plot title
+    ax.set_title('Heatmap Parameters On/Off for all Runs', fontsize=18)
+
+    # Show the plot
+    return plt.show()
 
 if __name__ == '__main__':
-    best_5_acc = get_best_acc()
-    lowest_5_gpu = get_lowest_gpu()
+    create_heatmap(get_all_runs())
+
     
 
     
