@@ -8,13 +8,15 @@ from borb.pdf import PDF
 from borb.pdf import Chart
 import yaml
 import csv
+import os
 from yaml.loader import SafeLoader
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from decimal import Decimal
 
-from analysis import get_5_best_acc, get_5_lowest_gpu
+from analysis import get_best_acc, get_lowest_gpu, get_all_acc, get_all_gpu
+
 
 """
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -105,25 +107,53 @@ def read_params_yaml(yaml_file):
     return params_keys, params_values
 
 
-def read_logs_with_pd(csv_file):
-    df = pd.read_csv(csv_file)
+def read_logs_with_pd(path_to_csv_file):
 
-    return df
+    if type(path_to_csv_file) == list:
+        logs = []
+        # Opening the csv file, convert into dictionary, and append to list
+        for path in path_to_csv_file:
+            df = pd.read_csv(path)
+            logs.append(df)
+        
+        return logs
+
+    else:
+        df = pd.read_csv(path_to_csv_file)
+
+        return df
 
 
-def read_logs(csv_file):
-    # Opening the csv file and convert into dictionary
-    csv_file = open(csv_file)
-    csv_reader = csv.DictReader(csv_file)
-    data = {}
-    for row in csv_reader:
-        data.update(row)
-    csv_file.close()
+def read_logs(path_to_csv_file):
 
-    return data
+    if type(path_to_csv_file) == list:
+        logs = []
+        # Opening the csv file, convert into dictionary, and append to list
+        for path in path_to_csv_file:
+            csv_file = open(path)
+            csv_reader = csv.DictReader(csv_file)
+            data = {}
+            for row in csv_reader:
+                data.update(row)
+            csv_file.close()
+            logs.append(data)
+        
+        return logs
+
+    
+    else:
+        # Opening the csv file and convert into dictionary
+        csv_file = open(path_to_csv_file)
+        csv_reader = csv.DictReader(csv_file)
+        data = {}
+        for row in csv_reader:
+            data.update(row)
+        csv_file.close()
+
+        return data
 
 
-def create_table_fivebest(layout, first, second, third, fourth, fifth, mode="acc"):
+def create_table_fivebest(layout, keys, first, second, third, fourth, fifth, mode="acc"):
     """
     Creates a table that shows the 5 best runs for the specified mode.
     Parameters:
@@ -133,6 +163,7 @@ def create_table_fivebest(layout, first, second, third, fourth, fifth, mode="acc
         mode : str
             Either accuracy or gpu. Will be the parameter that the winner list is based on.
     """
+
     # makes sure that pdf is only created if a valid mode is given
     if mode != "acc" and mode != "gpu":
         print("Mode must be either 'acc' or 'gpu'")
@@ -164,45 +195,43 @@ def create_table_fivebest(layout, first, second, third, fourth, fifth, mode="acc
             
             # best run according to accuracy
             .add(Paragraph("1"))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(first.get('accuracy'), font="Helvetica-oblique"))
-            .add(Paragraph(first.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(str(keys[0]), font="Helvetica-oblique"))
+            .add(Paragraph(str(first['val_accuracy'].iloc[-2]), font="Helvetica-oblique"))
+            .add(Paragraph(str(first['gpu_power_W'].mean()), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # second best run
             .add(Paragraph("2."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(second.get('accuracy'), font="Helvetica-oblique"))
-            .add(Paragraph(second.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[1], font="Helvetica-oblique"))
+            .add(Paragraph(second['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
+            .add(Paragraph(second['gpu_power_W'].mean(), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # third best run
             .add(Paragraph("3."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(third.get('accuracy'), font="Helvetica-oblique"))
-            .add(Paragraph(third.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[2], font="Helvetica-oblique"))
+            .add(Paragraph(third['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
+            .add(Paragraph(third['gpu_power_W'].mean(), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # fourth best run
             .add(Paragraph("4."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(fourth.get('accuracy'), font="Helvetica-oblique"))
-            .add(Paragraph(fourth.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[3], font="Helvetica-oblique"))
+            .add(Paragraph(fourth['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
+            .add(Paragraph(fourth['gpu_power_W'].mean(), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # fifth best run
             .add(Paragraph("5."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(fifth.get('accuracy'), font="Helvetica-oblique"))
-            .add(Paragraph(fifth.get('gpu_power_W'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[4], font="Helvetica-oblique"))
+            .add(Paragraph(fifth['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
+            .add(Paragraph(fifth['gpu_power_W'].mean(), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
-            # set padding on all cells
-            .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
             # set padding on all cells
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
@@ -232,45 +261,45 @@ def create_table_fivebest(layout, first, second, third, fourth, fifth, mode="acc
 
             # best run according to gpu
             .add(Paragraph("1"))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(first.get('gpu_power_W'), font="Helvetica-oblique"))
-            .add(Paragraph(first.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[0], font="Helvetica-oblique"))
+            .add(Paragraph(first['gpu_power_W'].mean(), font="Helvetica-oblique"))
+            .add(Paragraph(first['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # second best run
             .add(Paragraph("2."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(second.get('gpu_power_W'), font="Helvetica-oblique"))
-            .add(Paragraph(second.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[1], font="Helvetica-oblique"))
+            .add(Paragraph(second['gpu_power_W'].mean(), font="Helvetica-oblique"))
+            .add(Paragraph(second['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # third best run
             .add(Paragraph("3."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(third.get('gpu_power_W'), font="Helvetica-oblique"))
-            .add(Paragraph(third.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[2], font="Helvetica-oblique"))
+            .add(Paragraph(third['gpu_power_W'].mean(), font="Helvetica-oblique"))
+            .add(Paragraph(third['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # fourth best run
             .add(Paragraph("4."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(fourth.get('gpu_power_W'), font="Helvetica-oblique"))
-            .add(Paragraph(fourth.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[3], font="Helvetica-oblique"))
+            .add(Paragraph(fourth['gpu_power_W'].mean(), font="Helvetica-oblique"))
+            .add(Paragraph(fourth['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
 
             # fifth best run
             .add(Paragraph("5."))
-            .add(Paragraph("run#", font="Helvetica-oblique"))
-            .add(Paragraph(fifth.get('gpu_power_W'), font="Helvetica-oblique"))
-            .add(Paragraph(fifth.get('accuracy'), font="Helvetica-oblique"))
+            .add(Paragraph(keys[4], font="Helvetica-oblique"))
+            .add(Paragraph(fifth['gpu_power_W'].mean(), font="Helvetica-oblique"))
+            .add(Paragraph(fifth['val_accuracy'].iloc[-2], font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
             # set padding on all cells
-            .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
+            #.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
 
 def create_table_params(layout, params, vals, mode="acc"):
@@ -324,21 +353,47 @@ def create_table_params(layout, params, vals, mode="acc"):
     )
 
 
-def main(paths):
+def main(acc, gpu):
 
-    acc_winners = paths[0]
-    gpu_winners = paths[1]
+    # first extract all keys from acc file
+    acc_keys = list(acc.keys())
+    gpu_keys = list(gpu.keys())
 
-    first_acc_params, first_acc_values = read_params_yaml(params_path)
-    first_gpu_params, first_gpu_values = read_params_yaml(params_path)
+    # access all log paths of the top 5 runs
+    acc_logs_paths = []
+    acc_parameters_paths = []
 
-    logs_first = read_logs(logs_path)
-    logs_second = read_logs(logs_path)
-    logs_third = read_logs(logs_path)
-    logs_fourth = read_logs(logs_path)
-    logs_fifth = read_logs(logs_path)
+    for value in acc.values():
+        acc_logs_paths.append(value['logs'])
+        acc_parameters_paths.append(value['parameters'])
 
-    logs_full = read_logs_with_pd(logs_path)
+    gpu_logs_paths = []
+    gpu_parameters_paths = []
+
+    for value in gpu.values():
+        gpu_logs_paths.append(value['logs'])
+        gpu_parameters_paths.append(value['parameters'])
+    
+    # access log path of the top run
+    acc_1_idx = acc_keys[0]
+    gpu_1_idx = gpu_keys[0]
+
+    #acc_winner_logs_p = acc[acc_1_idx]['logs']
+    acc_winner_yaml_p = acc[acc_1_idx]['parameters']
+
+    #gpu_winner_logs_p = gpu[gpu_1_idx]['logs']
+    gpu_winner_yaml_p = gpu[gpu_1_idx]['parameters']
+ 
+    first_acc_params, first_acc_values = read_params_yaml(acc_winner_yaml_p)
+    first_gpu_params, first_gpu_values = read_params_yaml(gpu_winner_yaml_p)
+
+    # for accuracy
+    logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5 = read_logs_with_pd(acc_logs_paths)
+    
+    # for gpu
+    logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5 = read_logs_with_pd(gpu_logs_paths)
+
+    #logs_full = read_logs_with_pd(logs_path)
 
     # pdf setup
     document = Document()
@@ -347,14 +402,14 @@ def main(paths):
     layout = SingleColumnLayout(page)
     #layout.vertical_margin = page.get_page_info().get_height() * Decimal(0.01)
 
-    create_table_fivebest(layout, logs_first, logs_second, logs_third, logs_fourth, logs_fifth, mode="acc")
-    create_table_fivebest(layout, logs_first, logs_second, logs_third, logs_fourth, logs_fifth, mode="gpu")
+    create_table_fivebest(layout, acc_keys, logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5, mode="acc")
+    create_table_fivebest(layout, gpu_keys, logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5, mode="gpu")
     create_table_params(layout, first_acc_params, first_acc_values, mode="acc")
     create_table_params(layout, first_gpu_params, first_gpu_values, mode="gpu")
 
-    layout.add(Chart(create_plot_loss(logs_full), width=Decimal(300), height=Decimal(256)))
-    layout.add(Chart(create_plot_acc(logs_full), width=Decimal(300), height=Decimal(256)))
-    layout.add(Chart(create_plot_gpu(logs_full), width=Decimal(300), height=Decimal(256)))
+    #layout.add(Chart(create_plot_loss(logs_full), width=Decimal(300), height=Decimal(256)))
+    #layout.add(Chart(create_plot_acc(logs_full), width=Decimal(300), height=Decimal(256)))
+    #layout.add(Chart(create_plot_gpu(logs_full), width=Decimal(300), height=Decimal(256)))
 
     # store
     with open("result.pdf", "wb") as out_file_handle:
@@ -364,5 +419,6 @@ def main(paths):
 if __name__ == "__main__":
     
     ### !!! delete following line later and instead transfer path from main
-    paths_to_winners = [get_5_best_acc, get_5_lowest_gpu]
-    main(paths_to_winners)
+    best_acc = get_best_acc()
+    lowest_gpu = get_lowest_gpu()
+    main(best_acc, lowest_gpu)
