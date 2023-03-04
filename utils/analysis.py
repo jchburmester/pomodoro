@@ -5,18 +5,15 @@ import yaml
 import seaborn as sns
 import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
-
+from pandas_profiling import ProfileReport
 
 # set parent directory
 parent_dir = os.path.dirname(os.getcwd())
 
-import yaml
-from yaml.loader import SafeLoader
-
 '''Reading the yaml file with all parameters.'''
 
 # Opening the yaml file
-with open('./config.yaml', 'r') as stream:
+with open('utils/config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
@@ -133,9 +130,53 @@ def create_heatmap(df):
     # Show the plot
     return plt.show()
 
+def create_summary_csv():
+    # Define the path to the runs directory
+    runs_dir = "runs/"
+
+    # Create an empty list to hold the data for each run
+    data = []
+
+    # Loop through each subdirectory in the runs directory
+    for subdir in os.listdir(runs_dir):
+        # Check if the subdirectory is a valid run (has a parameters.yaml file)
+        params_file = os.path.join(runs_dir, subdir, "parameters.yaml")
+        if os.path.exists(params_file):
+            # Load the parameters from the YAML file
+            with open(params_file, "r") as f:
+                params = yaml.safe_load(f)
+
+            # Remove seed
+            params.pop("seed", None)
+            
+            # Read the logs.csv file into a DataFrame
+            logs_file = os.path.join(runs_dir, subdir, "logs.csv")
+            logs_df = pd.read_csv(logs_file)
+            
+            # Get the last accuracy and val_accuracy values from the logs
+            last_acc = logs_df["accuracy"].iloc[-2]
+            last_val_acc = logs_df["val_accuracy"].iloc[-2]
+            
+            # Calculate the average GPU power consumption
+            avg_gpu_watts = logs_df["gpu_power_W"].mean()
+            
+            # Add the data to the list
+            data.append({
+                "run": subdir,
+                **params,
+                "last_accuracy": last_acc,
+                "last_val_accuracy": last_val_acc,
+                "avg_gpu_power_watts": avg_gpu_watts
+            })
+
+    # Convert the data to a DataFrame and save it to a CSV file
+    df = pd.DataFrame(data)
+    df.to_csv("runs_summary.csv", index=False)
+
+    # Generate summary statistics using pandas_profiling
+    profile = ProfileReport(df, title="Runs Summary Report")
+    profile.to_file(output_file="runs_summary_report.html")
+
 if __name__ == '__main__':
-    create_heatmap(get_all_runs())
-
-    
-
-    
+    #create_heatmap(get_all_runs())
+    create_summary_csv()
