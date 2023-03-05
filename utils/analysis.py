@@ -5,6 +5,7 @@ import yaml
 import seaborn as sns
 import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
+from matplotlib.colors import ListedColormap
 
 
 # set parent directory
@@ -23,7 +24,7 @@ with open('./config.yaml', 'r') as stream:
         parameters = yaml.load(stream, Loader=SafeLoader)
         # Create matrix from dictionary values
         para_np = np.array([[val for val in p['values']] for p in parameters['configuration'].values()])
-        # Store values
+        # Store keys
         config_keys = parameters['configuration'].keys()
         # create dictionary with all the parameters
         config_dict = {key: para_np[i] for i, key in enumerate(config_keys)}
@@ -114,28 +115,94 @@ def get_all_runs():
        
     return df
 
-def create_heatmap(df):
+def get_above_80():
+    '''A function to get all runs with validation accuracy above 80%.
+    It returns all runs above 80% accuracy and its parameters and power draw.'''
+    para_np_array = np.array(para_np).flatten()
+    df = pd.DataFrame(columns=['run', 'val_accuracy', 'parameters', 'power_draw'])
 
-    df_array = df.to_numpy(dtype=float)
+    # get all runs and sort them by their best validation accuracy (second last row of each run)
+    all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
+    # sort runs by validation accuracy
+    all_runs.sort(key=lambda x: read_logs_with_pd(os.path.join(parent_dir, 'runs', x, 'logs.csv'))['val_accuracy'].iloc[-2], reverse=True)
+    # only take runs with validation accuracy above 80%
+    all_runs = [run for run in all_runs if read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2] > 0.75]
+    # store in the dataframe the parameters and power draw for each run
+    for run in all_runs:
+        try:
+            run_parameters = get_parameters(run)
+            run_parameters_np = np.array([val for val in run_parameters.values()])
+            run_parameters_np = run_parameters_np[1:-3]
+
+            result = [any(x in s for x in run_parameters_np) for s in para_np_array]
+            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
+            val_accuracy = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2]
+            df = df.append({'run': run, 'val_accuracy': val_accuracy, 'parameters': result, 'power_draw': power_draw}, ignore_index=True)
+        except:
+            print('Error in run: ', run)
+
+    # get rid of column runs
+    df = df.drop(columns=['run'])
+    
+    return df
+
+
+def create_heatmap(df, config_dict, para_np):
+
     para_np_list = np.array(para_np).flatten().tolist()
 
-    # Create a heatmap with Seaborn
-    fig, ax = plt.subplots(figsize=(16, 12))
-    sns.heatmap(df_array, cmap='coolwarm', annot=False, fmt='.2f', ax=ax)
+    # access only the parameters column in the dataframe
+    df_new = df['parameters'].apply(pd.Series)
 
-    # Set the axis labels
-    ax.set_xlabel(para_np_list, fontsize=14)
-    ax.set_ylabel('Run, from best to worst', fontsize=14)
+    print(df_new)
+    df_array = df_new.to_numpy(dtype=float)
+    
+    #config_keys = list(config_dict.keys())
+    #config_keys_list = [config_keys[i//4] if i%4==0 else '' for i in range(len(para_np_list))]
+
+    # Create a heatmap with Seaborn
+    colors = ['#e6eaeb', '#3b0e1a'] # define your own color scheme
+    cmap = ListedColormap(colors)
+    fig, ax = plt.subplots(figsize=(16, 12))
+    im = ax.imshow(df_array, cmap=cmap, aspect='auto')
+
+    plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
+
+    ax.set_ylabel('') # Remove y-axis label
+
+    # Set the tick labels
+    ax.set_xticks(np.arange(len(para_np_list)))
+    ax.set_xticklabels(para_np_list, rotation=90)
+
+    # Set the top labels
+    #ax2 = ax.twiny()
+    #ax2.set_xticks(np.arange(len(para_np_list)))
+    #ax2.set_xticks(ax.get_xticks() + 0.5)
+    #ax2.set_xticklabels(config_keys_list, rotation=45)
+    #ax2.tick_params(axis='x')
 
     # Set the plot title
-    ax.set_title('Heatmap Parameters On/Off for all Runs', fontsize=18)
+    ax.set_title('Parameter heatmap for all runs above 75% accuracy', fontsize=16)
+    
+    # have as y label on the left the accuracy values from the original dataframe column val_accuracy
+    ax.set_yticks(np.arange(len(df['val_accuracy'])))
+    ax.set_yticklabels(df['val_accuracy'], rotation=0)
 
-    # Show the plot
-    return plt.show()
+    # have as y label on the right the power draw values from the original dataframe column power_draw
+    ax2 = ax.twinx()
+    ax2.set_yticks(np.arange(len(df['power_draw'])))
+    ax2.set_yticks(ax.get_yticks())
+    # round the power draw values to 2 decimals
+    ax2.set_yticklabels([round(x, 2) for x in df['power_draw']], rotation=0)
+    ax2.tick_params(axis='y')
+
+
+    plt.show()
 
 if __name__ == '__main__':
-    create_heatmap(get_all_runs())
-
     
 
-    
+    create_heatmap(get_above_80(), config_dict, para_np)
+
+
+
