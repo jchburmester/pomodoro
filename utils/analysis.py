@@ -205,7 +205,7 @@ def create_summary_csv():
     data = []
 
     # Loop through each subdirectory in the runs directory
-    for subdir in os.listdir(runs_dir):
+    for subdir in sorted(os.listdir(runs_dir)):
         # Check if the subdirectory is a valid run (has a parameters.yaml file)
         params_file = os.path.join(runs_dir, subdir, "parameters.yaml")
         if os.path.exists(params_file):
@@ -226,6 +226,11 @@ def create_summary_csv():
             
             # Calculate the average GPU power consumption
             avg_gpu_watts = logs_df["gpu_power_W"].mean()
+
+            # Calculate the average time per epoch
+            logs_df["time"] = pd.to_datetime(logs_df["time"])
+            avg_time_per_epoch = logs_df["time"].diff().mean().total_seconds()
+            avg_time_per_epoch = round(avg_time_per_epoch, 2)
             
             # Add the data to the list
             data.append({
@@ -233,9 +238,10 @@ def create_summary_csv():
                 **params,
                 "last_accuracy": last_acc,
                 "last_val_accuracy": last_val_acc,
-                "avg_gpu_power_watts": avg_gpu_watts
+                "avg_gpu_power_watts": avg_gpu_watts,
+                "avg_seconds_per_epoch": avg_time_per_epoch
             })
-
+    
     # Convert the data to a DataFrame and save it to a CSV file
     df = pd.DataFrame(data)
     df.to_csv("runs_summary.csv", index=False)
@@ -245,9 +251,5 @@ def create_summary_csv():
     profile.to_file(output_file="runs_summary_report.html")
 
 if __name__ == '__main__':
-    
-
-    create_heatmap(get_above_80(), config_dict, para_np)
-
-
-
+    create_summary_csv()
+    # create_heatmap(get_above_80(), config_dict, para_np)
