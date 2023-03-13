@@ -1,4 +1,19 @@
-""" Implementation of the ResNet50 model. """
+""" Implementation of the ResNet50 model. Based on tf.keras.applications.resnet50.ResNet50 implementation. """
+
+"""
+TO-DO:
+- include in comments that preassumption is that data is in channel_last format
+- do we need os import and command below that?
+
+CHANGED (from last years implementation):
+- input_shape now adjustable parameter (last year: fixed to (224,224,3))
+- y = tf.keras.layers.Add()([x, input]) --> y = tf.keras.layers.Add()([input, x]) (see tf.keras.ResNet50)
+- Batch Normalization Epsilon from default (0.001) --> 1.001e-5 (see tf.keras.ResNet50)
+
+(- other difference: tf.keras.ResNet50 is initialized with ImageNet weights and 1000 classes per default, but we called with no pre-training so difference negligible)
+"""
+
+
 
 # Imports
 import numpy as np
@@ -39,10 +54,10 @@ class Block(tf.keras.Model):
         if identity_block is False:
             self.shortcut = tf.keras.layers.Conv2D(output_channels, (1, 1), strides=identity_strides, padding='same')
 
-        self.bn1 = tf.keras.layers.BatchNormalization()
-        self.bn2 = tf.keras.layers.BatchNormalization()
-        self.bn3 = tf.keras.layers.BatchNormalization()
-        self.bn4 = tf.keras.layers.BatchNormalization()
+        self.bn1 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
+        self.bn2 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
+        self.bn3 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
+        self.bn4 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
 
     def call(self, input):
 
@@ -62,7 +77,7 @@ class Block(tf.keras.Model):
             input = self.shortcut(input)
             input = self.bn4(input)
             
-        y = tf.keras.layers.Add()([x, input])
+        y = tf.keras.layers.Add()([input, x])
         y = tf.nn.relu(y)
 
         return y
@@ -82,10 +97,10 @@ class Block(tf.keras.Model):
 # FC
 
 class ResNet50(tf.keras.Model):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, input_shape):
         super(ResNet50, self).__init__()
-        self.conv1 = tf.keras.layers.Conv2D(input_shape=(224,224,3), filters=64, kernel_size=(7, 7), strides=2, padding='same')
-        self.bn1 = tf.keras.layers.BatchNormalization()
+        self.conv1 = tf.keras.layers.Conv2D(input_shape=input_shape, filters=64, kernel_size=(7, 7), strides=2, padding='same')
+        self.bn1 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
         self.maxpool1 = tf.keras.layers.MaxPool2D((3, 3), strides=2, padding='same')
 
         self.block1_1 = Block(64, 256, False, 1)
