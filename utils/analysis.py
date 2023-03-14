@@ -256,8 +256,6 @@ def gpu_per_parameter():
     # create a dataframe to store the power draw for each parameter
     df = pd.DataFrame(columns=['parameters', 'power_draw'])
 
-
-
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
 
     # for every run get the power draw and store it in the dataframe together with a True for the parameter that was used
@@ -301,10 +299,9 @@ def gpu_per_parameter():
     
     # drop batch size 1
     triplets_dict.pop(('batch_size', 1))
+    return triplets_dict, df
 
-    return triplets_dict
-
-def plot_triplets(dic):
+def plot_triplets(dic, _):
 
     # plot the results
     # x axis to be wide and showing the parameters (keys) with the y axis showing the values / Power draw
@@ -355,11 +352,46 @@ def plot_triplets(dic):
     plt.show()
 
 
+def stats(df):
+    import pandas as pd
+    '''A function that takes as input a dictionary with the power draws for each parameter. It then stores each run in a dataframe together with the parameters.
+    The columns of the dataframe are called run_id, preprocessing, augmentation, etc (all keys in the dictionary, 10 in total), power draw, and the rows are the runs.'''
 
+    # create a dataframe to store the power draw for each parameter
+    df_new = pd.DataFrame(columns=['run_id', 'power_draw','preprocessing', 'augmentation', 'batch_size', 'lr', 'lr_schedule', 'partitioning', 'optimizer', 'optimizer_momentum', 'internal', 'precision'])
+
+    # for every run, check for the parameter value and store it under the respective column, also store the power draw
+    for i in range(len(df)):
+        for key, value in df['parameters'][i].items():
+            df_new.loc[i, key] = value
+        df_new.loc[i, 'power_draw'] = df['power_draw'][i]
+        df_new.loc[i, 'run_id'] = i
+    
+    # drop first row
+    df_new = df_new.drop(0)
+
+    import statsmodels.api as sm
+    from sklearn.model_selection import train_test_split
+    # drop the run_id column
+    df_new = df_new.drop(['run_id'], axis=1)
+
+    df_sm = pd.get_dummies(df_new, columns=['preprocessing', 'augmentation', 'batch_size', 'lr', 'lr_schedule', 'partitioning', 'optimizer', 'optimizer_momentum', 'internal', 'precision'])
+ 
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(df_sm.drop(['power_draw'], axis=1), df_sm['power_draw'].astype(float), test_size=0.2)
+
+
+
+    # Fit a multiple linear regression model using statsmodels
+    model = sm.OLS(y_train, X_train).fit()
+
+    # Print the model summary
+    print(model.summary())
 
 
 if __name__ == '__main__':
     # create_summary_csv()
     # create_heatmap(get_above_80(), config_dict, para_np)
-    gpu_p_p = gpu_per_parameter()
-    plot_triplets(gpu_p_p)
+    gpu_p_p, df = gpu_per_parameter()
+    stats(df)
+    #plot_triplets(gpu_p_p)
