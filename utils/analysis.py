@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
 from matplotlib.colors import ListedColormap
 
-from pandas_profiling import ProfileReport
+#from pandas_profiling import ProfileReport
 
 # set parent directory
 parent_dir = os.path.dirname(os.getcwd())
@@ -15,7 +15,7 @@ parent_dir = os.path.dirname(os.getcwd())
 '''Reading the yaml file with all parameters.'''
 
 # Opening the yaml file
-with open('utils/config.yaml', 'r') as stream:
+with open('./config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
@@ -250,6 +250,116 @@ def create_summary_csv():
     profile = ProfileReport(df, title="Runs Summary Report")
     profile.to_file(output_file="runs_summary_report.html")
 
+def gpu_per_parameter():
+    '''A function that stores in a new dataframe the power draws for each parameter.'''
+
+    # create a dataframe to store the power draw for each parameter
+    df = pd.DataFrame(columns=['parameters', 'power_draw'])
+
+
+
+    all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
+
+    # for every run get the power draw and store it in the dataframe together with a True for the parameter that was used
+    for run in all_runs:
+        try:
+            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
+            # extract the parameter that was used
+            parameters = get_parameters(run)
+            # remove first element and the last two
+            del parameters['model']
+            del parameters['seed']
+            del parameters['n_parameters']
+            del parameters['test_accuracy']
+
+            # append the power draw to the dataframe
+            df = df.append({'parameters': parameters, 'power_draw': power_draw}, ignore_index=True)
+
+        except:
+            print('Error in run: ', run)
+
+    # create a dictionary to store the power draws for each parameter
+    triplets_list = []
+
+    # for every combination of key value pairs in the dataframe, store the power draw in the dictionary
+    for i in range(len(df)):
+        for key, value in df['parameters'][i].items():
+            # store triplets of parameter, value and power draw and append it to a list
+            triplet = (key, value, df['power_draw'][i])
+            triplets_list.append(triplet)
+
+    # combine all triplets that share the first two elements (parameter and value) and store the power draw in a list for each parameter value combination
+    triplets_dict = {}
+    for triplet in triplets_list:
+        if triplet[0:2] in triplets_dict:
+            triplets_dict[triplet[0:2]].append(triplet[2])
+        else:
+            triplets_dict[triplet[0:2]] = [triplet[2]]
+    
+    # sort by first element of the tuple
+    triplets_dict = dict(sorted(triplets_dict.items(), key=lambda item: item[0]))
+    
+    # drop batch size 1
+    triplets_dict.pop(('batch_size', 1))
+
+    return triplets_dict
+
+def plot_triplets(dic):
+
+    # plot the results
+    # x axis to be wide and showing the parameters (keys) with the y axis showing the values / Power draw
+    # the data points are to be indicates as scatters
+
+    # create a figure
+    fig, ax = plt.subplots(figsize=(30, 15))
+
+    # have more space to the edges of the window
+    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.35)
+    
+    # set the title
+    ax.set_title('Power draw per parameter value', fontsize=16)
+
+    # set the x axis label
+    ax.set_xlabel('Parameter value', fontsize=14)
+
+    # set the y axis label
+    ax.set_ylabel('Power draw (W)', fontsize=14)
+
+    # set the x axis ticks
+    ax.set_xticks(np.arange(len(dic.keys())))
+
+    # set the x axis tick labels
+    ax.set_xticklabels([key[0] + ' ' + str(key[1]) for key in dic.keys()], rotation=90)
+
+    # set the y axis ticks
+    ax.set_yticks(np.arange(0, 100, 10))
+
+    # set the y axis tick labels
+    ax.set_yticklabels(np.arange(0, 100, 10), rotation=0)
+
+    # set the grid
+    ax.grid(True)
+
+    # indicate the means in the each parameter value combination
+    ax.hlines([np.mean(dic[key]) for key in dic.keys()], xmin=np.arange(len(dic.keys())) - 0.4, xmax=np.arange(len(dic.keys())) + 0.4, color='red', label='Mean')
+
+
+    # set the legend
+    ax.legend()
+
+    # plot the data
+    for i, key in enumerate(dic.keys()):
+        ax.scatter([i] * len(dic[key]), dic[key], s=50, alpha=0.5)
+
+    # plot
+    plt.show()
+
+
+
+
+
 if __name__ == '__main__':
-    create_summary_csv()
+    # create_summary_csv()
     # create_heatmap(get_above_80(), config_dict, para_np)
+    gpu_p_p = gpu_per_parameter()
+    plot_triplets(gpu_p_p)
