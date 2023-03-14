@@ -4,9 +4,10 @@ import pandas as pd
 import yaml
 import seaborn as sns
 import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
 from yaml.loader import SafeLoader
 from matplotlib.colors import ListedColormap
-
 #from pandas_profiling import ProfileReport
 
 # set parent directory
@@ -353,7 +354,6 @@ def plot_triplets(dic, _):
 
 
 def stats(df):
-    import pandas as pd
     '''A function that takes as input a dictionary with the power draws for each parameter. It then stores each run in a dataframe together with the parameters.
     The columns of the dataframe are called run_id, preprocessing, augmentation, etc (all keys in the dictionary, 10 in total), power draw, and the rows are the runs.'''
 
@@ -370,8 +370,7 @@ def stats(df):
     # drop first row
     df_new = df_new.drop(0)
 
-    import statsmodels.api as sm
-    from sklearn.model_selection import train_test_split
+
     # drop the run_id column
     df_new = df_new.drop(['run_id'], axis=1)
 
@@ -387,6 +386,8 @@ def stats(df):
 
     # Print the model summary
     print(model.summary())
+
+
 
 
 if __name__ == '__main__':
