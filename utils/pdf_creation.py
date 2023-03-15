@@ -102,6 +102,34 @@ def create_heatmap(df):
     return plt.gcf()
 
 
+def create_evaluation_plot(logs, title):
+
+    all_epochs = logs["epoch"].tolist()
+    # exclude pretraining and posttraining values for loss and accuracy plots
+    train_epochs = logs["epoch"][1:-1].tolist()
+
+    train_loss = logs["loss"][1:-1].tolist()
+    val_loss = logs["val_loss"][1:-1].tolist()
+    train_acc = logs["accuracy"][1:-1].tolist()
+    val_acc = logs["val_accuracy"][1:-1].tolist()
+    gpu = logs["gpu_power_W"].tolist()
+
+    # plot
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(train_epochs, train_loss, label="Training Loss")
+    ax.plot(train_epochs, val_loss, label="Validation Loss")
+    ax.plot(train_epochs, train_acc, label="Training Accuracy")
+    ax.plot(train_epochs, val_acc, label="Validation Accuracy")
+    ax.plot(all_epochs, gpu, label="GPU Power Consumption")
+    ax.set_xlabel("Epochs")
+    #ax.set_ylabel("Loss")
+    ax.set_title(title)
+    ax.legend()
+
+    return plt.gcf()
+
+
 def read_params_yaml(yaml_file):
     # Opening the yaml file
     with open(yaml_file, 'r') as stream:
@@ -524,9 +552,9 @@ def main(acc, gpu, eff, base):
     create_table_params(layout, first_eff_params, first_eff_values, mode="eff")
     create_table_params(layout, base_params, base_values, mode="base")
 
-    #layout.add(Chart(create_plot_loss(logs_full), width=Decimal(300), height=Decimal(256)))
-    #layout.add(Chart(create_plot_acc(logs_full), width=Decimal(300), height=Decimal(256)))
-    #layout.add(Chart(create_plot_gpu(logs_full), width=Decimal(300), height=Decimal(256)))
+    layout.add(Chart(create_evaluation_plot(logs_acc1, title="Best accuracy run"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_evaluation_plot(logs_gpu1, title="Best GPU run"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_evaluation_plot(logs_eff1, title="Best efficiency run"), width=Decimal(400), height=Decimal(256)))
 
     # store
     with open("result.pdf", "wb") as out_file_handle:
