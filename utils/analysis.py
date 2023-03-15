@@ -432,4 +432,5 @@ if __name__ == '__main__':
     # create_heatmap(get_above_80(), config_dict, para_np)
     gpu_p_p, df = gpu_per_parameter()
     stats(df)
+    print(config_dict)
     #plot_triplets(gpu_p_p)
