@@ -1,6 +1,6 @@
 # project: green_screen
 
-We built a streamlined training pipeline to objectively test the energy consumption of training a ResNet-50 model on image classification in different scenarios. We selected three preprocessing techniques and seven model / hyperparameter optimization approaches that are either switched on or off during training. As part of the project, we built a package for open-source that allows users to import `SMICallback()` which logs GPU power draw, next to training loss, and accuracy in csv files. The package can be downloaded here:
+We built a streamlined training pipeline to objectively test the energy consumption of training a ResNet-50 model on image classification in different scenarios. We selected three preprocessing techniques and seven model / hyperparameter optimization approaches that are either switched on or off during training. As part of the project, we built an open-source package that allows users to import `SMICallback()` (of type `tf.keras.callbacks.Callback`) which logs GPU power draw, next to training loss, and accuracy in csv files for `tf.keras.Sequential` models. The package can be downloaded here:
 
 LINK TO PACKAGE
 
