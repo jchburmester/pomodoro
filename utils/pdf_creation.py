@@ -15,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from decimal import Decimal
 
-from analysis import get_best_acc, get_lowest_gpu
+from analysis import get_best_acc, get_lowest_gpu, get_best_eff
 
 
 """
@@ -165,6 +165,7 @@ def read_logs(path_to_csv_file):
         return data
 
 
+
 def create_table_fivebest(layout, keys, first, second, third, fourth, fifth, mode="acc"):
     """
     Creates a table that shows the 5 best runs for the specified mode.
@@ -173,17 +174,15 @@ def create_table_fivebest(layout, keys, first, second, third, fourth, fifth, mod
         layout : 
             Layout of current pdf
         mode : str
-            Either accuracy or gpu. Will be the parameter that the winner list is based on.
+            Either accuracy, gpu or efficiency. Will be the parameter that the winner table is based on.
     """
 
-    print(first.columns)
-
     # makes sure that pdf is only created if a valid mode is given
-    if mode != "acc" and mode != "gpu":
-        print("Mode must be either 'acc' or 'gpu'")
+    if mode != "acc" and mode != "gpu" and mode != "eff":
+        print("Mode must be either 'acc', 'gpu' or 'eff'.")
         return
     
-    elif mode == "acc" :
+    elif mode == "acc":
 
         # table heading
         layout.add(Paragraph("Table 1: The five best runs according to accuracy.",
@@ -202,55 +201,55 @@ def create_table_fivebest(layout, keys, first, second, third, fourth, fifth, mod
                 )
             )
             .add(Paragraph("Run Number", font="Helvetica-Bold"))
-            .add(Paragraph("Accuracy (in %)", font="Helvetica-Bold"))
             .add(Paragraph("GPU (in kWh)", font="Helvetica-Bold"))
+            .add(Paragraph("Accuracy (in %)", font="Helvetica-Bold"))
             .add(Paragraph("Number of Parameters", font="Helvetica-Bold"))
             .add(Paragraph("Efficiency (acc/gpu)", font="Helvetica-Bold"))
             
             # best run according to accuracy
             .add(Paragraph("1"))
             .add(Paragraph(str(keys[0]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(first['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round(first['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(first['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("gpu", font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((first['val_accuracy'].iloc[-2])*100/(first['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
 
             # second best run
             .add(Paragraph("2."))
             .add(Paragraph(str(keys[1]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(second['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round(second['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(second['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((second['val_accuracy'].iloc[-2])*100/(second['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
 
             # third best run
             .add(Paragraph("3."))
             .add(Paragraph(str(keys[2]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(third['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round(third['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(third['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((third['val_accuracy'].iloc[-2])*100/(third['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
 
             # fourth best run
             .add(Paragraph("4."))
             .add(Paragraph(str(keys[3]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fourth['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round(fourth['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fourth['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((fourth['val_accuracy'].iloc[-2])*100/(fourth['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
 
             # fifth best run
             .add(Paragraph("5."))
             .add(Paragraph(str(keys[4]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fifth['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fifth['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fifth['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))            
+            .add(Paragraph(str(np.round(fifth['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((fifth['val_accuracy'].iloc[-2])*100/(fifth['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
             # set padding on all cells
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
 
-    else:       
+    elif mode == "gpu":       
         # table heading
         layout.add(Paragraph("Table 2: The five best runs according to GPU.",
                              font="Helvetica-Bold", font_size=10))
@@ -276,45 +275,112 @@ def create_table_fivebest(layout, keys, first, second, third, fourth, fifth, mod
             # best run according to gpu
             .add(Paragraph("1"))
             .add(Paragraph(str(keys[0]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(first['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(first['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(first['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(first['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round((first['val_accuracy'].iloc[-2])*100/(first['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((first['val_accuracy'].iloc[-2])*100/(first['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
 
             # second best run
             .add(Paragraph("2."))
             .add(Paragraph(str(keys[1]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(second['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(second['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(second['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(second['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round((second['val_accuracy'].iloc[-2])*100/(second['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((second['val_accuracy'].iloc[-2])*100/(second['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
 
             # third best run
             .add(Paragraph("3."))
             .add(Paragraph(str(keys[2]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(third['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(third['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(third['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(third['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round((third['val_accuracy'].iloc[-2])*100/(third['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((third['val_accuracy'].iloc[-2])*100/(third['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
 
             # fourth best run
             .add(Paragraph("4."))
             .add(Paragraph(str(keys[3]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fourth['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fourth['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fourth['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fourth['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round((fourth['val_accuracy'].iloc[-2])*100/(fourth['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((fourth['val_accuracy'].iloc[-2])*100/(fourth['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
 
             # fifth best run
             .add(Paragraph("5."))
             .add(Paragraph(str(keys[4]), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fifth['gpu_power_W'].mean(), 5)), font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round(fifth['val_accuracy'].iloc[-2], 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fifth['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fifth['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
             .add(Paragraph("acc", font="Helvetica-oblique"))
-            .add(Paragraph(str(np.round((fifth['val_accuracy'].iloc[-2])*100/(fifth['gpu_power_W'].mean()), 5)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((fifth['val_accuracy'].iloc[-2])*100/(fifth['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
             # set padding on all cells
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
+
+    elif mode == "eff":
+        # table heading
+        layout.add(Paragraph("Table 3: The five best runs according to efficiency (acc/gpu).",
+                             font="Helvetica-Bold", font_size=10))
+        
+        # gpu table
+        layout.add(
+            FixedColumnWidthTable(number_of_columns=6, number_of_rows=6, 
+                                # first column should be smaller than remaining
+                                column_widths=[Decimal(0.2), Decimal(1), Decimal(1), Decimal(1), Decimal(1), Decimal(1)])
+            .add(
+                TableCell(
+                    Paragraph(" "),
+                    border_top=False,
+                    border_left=False,
+                )
+            )
+            .add(Paragraph("Run Number", font="Helvetica-Bold"))
+            .add(Paragraph("GPU (in kWh)", font="Helvetica-Bold"))
+            .add(Paragraph("Accuracy (in %)", font="Helvetica-Bold"))
+            .add(Paragraph("Number of Parameters", font="Helvetica-Bold"))
+            .add(Paragraph("Efficiency (acc/gpu)", font="Helvetica-Bold"))
+
+            # best run according to gpu
+            .add(Paragraph("1"))
+            .add(Paragraph(str(keys[0]), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(first['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(first['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
+            .add(Paragraph("acc", font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((first['val_accuracy'].iloc[-2])*100/(first['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
+
+            # second best run
+            .add(Paragraph("2."))
+            .add(Paragraph(str(keys[1]), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(second['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(second['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
+            .add(Paragraph("acc", font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((second['val_accuracy'].iloc[-2])*100/(second['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
+
+            # third best run
+            .add(Paragraph("3."))
+            .add(Paragraph(str(keys[2]), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(third['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(third['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
+            .add(Paragraph("acc", font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((third['val_accuracy'].iloc[-2])*100/(third['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
+
+            # fourth best run
+            .add(Paragraph("4."))
+            .add(Paragraph(str(keys[3]), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fourth['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fourth['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
+            .add(Paragraph("acc", font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((fourth['val_accuracy'].iloc[-2])*100/(fourth['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
+
+            # fifth best run
+            .add(Paragraph("5."))
+            .add(Paragraph(str(keys[4]), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fifth['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round(fifth['val_accuracy'].iloc[-2]*100, 3)), font="Helvetica-oblique"))
+            .add(Paragraph("acc", font="Helvetica-oblique"))
+            .add(Paragraph(str(np.round((fifth['val_accuracy'].iloc[-2])*100/(fifth['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
+            # set padding on all cells
+            .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
+        )
+
 
 def create_table_params(layout, params, vals, mode="acc"):
     """
@@ -322,16 +388,19 @@ def create_table_params(layout, params, vals, mode="acc"):
     """    
 
     # table heading according to mode
-    if mode != "acc" and mode != "gpu":
-        print("Mode must be either 'acc' or 'gpu'")
+    if mode != "acc" and mode != "gpu" and mode != "eff":
+        print("Mode must be either 'acc', 'gpu' or 'eff'.")
         return
     elif(mode=="acc"):
-        layout.add(Paragraph("Table 3: Parameter values for the winning run in accuracy.",
+        layout.add(Paragraph("Table 4: Parameter values for the winning run in accuracy.",
                              font="Helvetica-Bold", font_size=10))
-    else:
-        layout.add(Paragraph("Table 3: Parameter values for the winning run in GPU.",
+    elif(mode=="gpu"):
+        layout.add(Paragraph("Table 5: Parameter values for the winning run in GPU.",
                              font="Helvetica-Bold", font_size=10))
-        
+    elif(mode=="eff"):
+        layout.add(Paragraph("Table 6: Parameter values for the winning run in efficiency.",
+                             font="Helvetica-Bold", font_size=10))
+
     layout.add(
         FixedColumnWidthTable(number_of_columns=2, number_of_rows=14)
 
@@ -367,13 +436,15 @@ def create_table_params(layout, params, vals, mode="acc"):
     )
 
 
-def main(acc, gpu):
+def main(acc, gpu, eff):
 
     # first extract all keys from acc file
     acc_keys = list(acc.keys())
     gpu_keys = list(gpu.keys())
+    eff_keys = list(eff.keys())
 
-    # access all log paths of the top 5 runs
+    # access all log paths of the top 5 runs for all categories
+    # accuracy
     acc_logs_paths = []
     acc_parameters_paths = []
 
@@ -381,6 +452,7 @@ def main(acc, gpu):
         acc_logs_paths.append(value['logs'])
         acc_parameters_paths.append(value['parameters'])
 
+    # gpu
     gpu_logs_paths = []
     gpu_parameters_paths = []
 
@@ -388,26 +460,45 @@ def main(acc, gpu):
         gpu_logs_paths.append(value['logs'])
         gpu_parameters_paths.append(value['parameters'])
     
-    # access log path of the top run
-    acc_1_idx = acc_keys[0]
-    gpu_1_idx = gpu_keys[0]
+    # efficiency
+    eff_logs_paths = []
+    eff_parameters_paths = []
 
-    #acc_winner_logs_p = acc[acc_1_idx]['logs']
-    acc_winner_yaml_p = acc[acc_1_idx]['parameters']
-
-    #gpu_winner_logs_p = gpu[gpu_1_idx]['logs']
-    gpu_winner_yaml_p = gpu[gpu_1_idx]['parameters']
- 
-    first_acc_params, first_acc_values = read_params_yaml(acc_winner_yaml_p)
-    first_gpu_params, first_gpu_values = read_params_yaml(gpu_winner_yaml_p)
-
-    # for accuracy
-    logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5 = read_logs_with_pd(acc_logs_paths)
+    for value in eff.values():
+        eff_logs_paths.append(value['logs'])
+        eff_parameters_paths.append(value['parameters'])
     
-    # for gpu
+    # store parameter paths of all runs
+    acc_parameters_paths = [acc[key]['parameters'] for key in acc_keys]
+    gpu_parameters_paths = [gpu[key]['parameters'] for key in gpu_keys]
+    eff_parameters_paths = [eff[key]['parameters'] for key in eff_keys]
+
+    # extract parameters of the top run for each category
+    first_acc_params, first_acc_values = read_params_yaml(acc_parameters_paths[0])
+    first_gpu_params, first_gpu_values = read_params_yaml(gpu_parameters_paths[0])
+    first_eff_params, first_eff_values = read_params_yaml(eff_parameters_paths[0])
+
+    # extract parameters of all runs for each category
+    acc_params = [read_params_yaml(path)[0] for path in acc_parameters_paths]
+    acc_values = [read_params_yaml(path)[1] for path in acc_parameters_paths]
+    gpu_params = [read_params_yaml(path)[0] for path in gpu_parameters_paths]
+    gpu_values = [read_params_yaml(path)[1] for path in gpu_parameters_paths]
+    eff_params = [read_params_yaml(path)[0] for path in eff_parameters_paths]
+    eff_values = [read_params_yaml(path)[1] for path in eff_parameters_paths]
+
+    # print sample values
+    print("Sample values:")
+    print(acc_values[0])
+
+    # get top 5 logs for each category
+    logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5 = read_logs_with_pd(acc_logs_paths)
     logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5 = read_logs_with_pd(gpu_logs_paths)
+    logs_eff1, logs_eff2, logs_eff3, logs_eff4, logs_eff5 = read_logs_with_pd(eff_logs_paths)
 
     #logs_full = read_logs_with_pd(logs_path)
+
+    # extract number of parameters from parameter files
+    #num_params = get_num_params(acc_parameters_paths[0])
 
     # pdf setup
     document = Document()
@@ -418,8 +509,10 @@ def main(acc, gpu):
 
     create_table_fivebest(layout, acc_keys, logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5, mode="acc")
     create_table_fivebest(layout, gpu_keys, logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5, mode="gpu")
+    create_table_fivebest(layout, eff_keys, logs_eff1, logs_eff2, logs_eff3, logs_eff4, logs_eff5, mode="eff")
     create_table_params(layout, first_acc_params, first_acc_values, mode="acc")
     create_table_params(layout, first_gpu_params, first_gpu_values, mode="gpu")
+    create_table_params(layout, first_eff_params, first_eff_values, mode="eff")
 
     #layout.add(Chart(create_plot_loss(logs_full), width=Decimal(300), height=Decimal(256)))
     #layout.add(Chart(create_plot_acc(logs_full), width=Decimal(300), height=Decimal(256)))
@@ -435,4 +528,5 @@ if __name__ == "__main__":
     ### !!! delete following line later and instead transfer path from main
     best_acc = get_best_acc()
     lowest_gpu = get_lowest_gpu()
-    main(best_acc, lowest_gpu)
+    best_eff = get_best_eff()
+    main(best_acc, lowest_gpu, best_eff)

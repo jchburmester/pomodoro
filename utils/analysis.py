@@ -91,6 +91,28 @@ def get_lowest_gpu():
     return lowest_5_runs_dict
 
 
+def get_best_eff():
+
+    eff = []
+
+    # get validation accuracy and power draw for each run
+    for run in os.listdir(os.path.join(parent_dir, 'runs')):
+        logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
+        eff.append((logs['val_accuracy'].iloc[-2])/(logs['gpu_power_W'].mean()))
+
+    # get best 5 runs, sorted automatically
+    eff = pd.Series(eff)
+    best_5_eff = eff.nlargest(5).index
+
+    # for best runs, get index and paths to logs and parameters file
+    best_5_eff_dict = {}
+    for run in best_5_eff:
+        best_5_eff_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
+                                  'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml')}
+        
+    return best_5_eff_dict
+
+
 def get_all_runs():
     
     para_np_array = np.array(para_np).flatten()
