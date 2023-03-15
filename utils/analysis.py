@@ -137,6 +137,19 @@ def get_all_runs():
     return df
 
 
+def get_baseline():
+
+    # get baseline logs and parameters of run 001
+    baseline_logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', '001', 'logs.csv'))
+    baseline_parameters = get_parameters('001')
+
+    # store in dictionary
+    baseline_dict = {'logs': baseline_logs,
+                        'parameters': baseline_parameters}
+    
+    return baseline_dict
+
+
 def get_above_80():
     '''A function to get all runs with validation accuracy above 80%.
     It returns all runs above 80% accuracy and its parameters and power draw.'''

@@ -12,20 +12,6 @@ Known bugs:
 
 - jit-compilation does not work on MacOS, METAL (maybe on other systems too).
 
-Open topics 10/02
-=================
-1. Miro Board: create diagram to show training / logging pipeline. [Marlena]
-2. Draft overleaf report
-3. Get GPU logging running [Max]
-4. Debugging Cutmix Mixup [Christian]
-5. Commenting + Code Cleaning + Function descriptions
-6. analysis.py file to be continued. Requires training logs to do so. Idea for the last lines of the file would be to delete all files on the run folders to ensure a fresh start during consecutive training. [Christian]
-7. Loss und Accurarcy Logging [Max]
-8. Once step 7 is done, amend shell pipeline.
-9. Discuss arguments of shell file.
-10. Fix util function subfolder runs [Marlena]
-11. Pdf report for best runs and visualisations for winner. Use #borb package for pdf creation. [Marlena]
-
 
 
 
@@ -39,14 +25,8 @@ Open topics 10/02
 - . that creates a model with these parameters after all n runs
 - . ...
 
-NEW TODO's:
-1. Try to mimic sweep visualisations
-2. Keep track of the things / work we have done (to hand a summary to Leon in the end). Marlena has started writing notes in our google doc.
-3. After energy analysis: main file to write final python file with best sweep configs
 
 
-(later) 
-* Introduce a energy consumption (correlated with number of epochs) / (val) accuracy / inference time quotient or function to be used to measure trained models (but check literature first!)
 
 OLD TODO's: 
 * Extend custom callback to use nvidia-ml-py3 instead of nvidia-smi in shell. This way the power usage is linked directly to the training and can be exported to the csv file directly (better automation). 
