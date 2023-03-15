@@ -23,10 +23,10 @@ The selected techniques and parameters are stored in `config.yaml`. The followin
 }
 ```
 
-<br >
+
 For the project, we chose `n=100` for the number of runs to train and track the model. For each run, `main.py` calls `config_creator.py` to generate a random combination of parameters for one run. Based on the techniques / parameters switched on, `main.py` runs through preprocessing, model building, model compiling, and model training.
 
-<br >
+
 Finally, `model.fit` is called with `SMICallback()`as callback function:
 
 ```
