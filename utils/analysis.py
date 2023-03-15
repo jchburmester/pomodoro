@@ -136,6 +136,7 @@ def get_all_runs():
        
     return df
 
+
 def get_above_80():
     '''A function to get all runs with validation accuracy above 80%.
     It returns all runs above 80% accuracy and its parameters and power draw.'''
@@ -219,6 +220,7 @@ def create_heatmap(df, config_dict, para_np):
 
 
     plt.show()
+
 
 def create_summary_csv():
     # Define the path to the runs directory
