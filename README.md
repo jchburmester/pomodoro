@@ -1,6 +1,6 @@
 # project: green_screen
 
-We built a streamlined training pipeline to objectively test the energy consumption of training a ResNet-50 model on image classification in different scenarios. We selected three preprocessing techniques and seven model / hyperparameter optimization approaches that are either switched on or off during training. As part of the project, we built a package for open-source that allows users to import `SMICallback()` which is a callback function that logs GPU power draw, next to training loss, and accuracy in csv files. The package can be downloaded here:
+We built a streamlined training pipeline to objectively test the energy consumption of training a ResNet-50 model on image classification in different scenarios. We selected three preprocessing techniques and seven model / hyperparameter optimization approaches that are either switched on or off during training. As part of the project, we built a package for open-source that allows users to import `SMICallback()` which logs GPU power draw, next to training loss, and accuracy in csv files. The package can be downloaded here:
 
 LINK TO PACKAGE
 
@@ -15,7 +15,7 @@ The following figure displays the structure of our pipeline:
 ![Figure 1: project pipeline](pipeline.jpg)
 
 ### parameter configuration
-The selected techniques and parameters are stored in `config.yaml`. The following is a print of the same in dictionary format showing all keys and respective values:
+We selected a number of techniques and parameters for this project and stored them in `config.yaml`. The following is a print of the same in dictionary format showing all keys and respective values:
 
 ```
 {
