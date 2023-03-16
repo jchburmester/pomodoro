@@ -27,7 +27,7 @@ from utils.preprocessing import Preprocessing
 from utils.mixup import mixup
 from utils.cutmix import cutmix
 from models.resnet50 import load_resnet50
-from models.convnextv1 import load_convnextv1
+from models.resnet50_self import ResNet50 # self implemented resnet50
 from utils.callback import SMICallback
 
 # Start a parser with the arguments
@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(description='Configuration for the training of 
 # Parsing arguments if required in the shell pipeline
 parser.add_argument('--baseline', action='store_true', help='argument for training the model with no or the most basic parameters')
 parser.add_argument('--epochs', type=int, default=1, help='number of epochs')
-parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50, convnextv1')
+parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50')
 parser.add_argument('--seed', type=int, default=22, help='seed for the random number generator')
 
 # Parse the arguments
@@ -299,9 +299,8 @@ else:
 if args.model == 'resnet50':
     model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4], weights=None)
 
-# Loading version 1 of the convnext model
-elif args.model == 'convnextv1':
-    model = load_convnextv1(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4], weights=None)
+else: 
+    print('Model not found')
 
 # Initialize model, stack the preprocessing layer and the model
 combined_model = tf.keras.Sequential([

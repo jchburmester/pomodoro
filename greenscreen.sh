@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# This script is used to run the pomodoro technique.
-# It will train a model for 1 run with randomised optimisation parameters.
-# It will then have a break and rest.
-# After a selected number of runs, it will stop the training and learning process.
-# Then it will analyse the results and find the model that used little resources while achieving good classification results.
-# Then it is happy.
+# This script is used to run and control the training pipeline.
+# It will train a model for a selected number of runs with randomized optimisation parameters.
+# Once training is done, it will analyze the results and find the model seetings
+# that used little resources while achieving good classification results.
+# For more details, see the README.md file.
 
 ############## Main script ##################
 
@@ -20,4 +19,4 @@ done
 ############## Analysis #####################
 # run the analysis script to find a winner
 echo "Running GPU results comparison"
-#python analysis.py
+python analysis.py
