@@ -10,7 +10,7 @@ LINK TO PAPER REPORT
 
 ## project and file structure
 
-The following figure displays the structure of our pipeline:
+The following figure displays the structure of our pipeline. It is inspired by the automated hyperparameter tuning of Weights & Biases (https://docs.wandb.ai/guides/sweeps):
 
 ![Figure 1: project pipeline](pipeline.jpg)
 
@@ -33,7 +33,7 @@ We selected a number of techniques and parameters for this project and stored th
 ```
 <br />
 
-For the project, we chose `n=100` for the number of runs to train and track the model. `greenscreen.sh` kicks off the pipeline by first calling `main.py`. For each run, `main.py` calls `config_creator.py` to generate a random combination of parameters for one run. Based on the techniques / parameters switched on, `main.py` runs through preprocessing, model building, model compiling, and model training.
+For the project, we chose `n=100` as the number of runs to train and track the model. `greenscreen.sh` kicks off the pipeline by first calling `main.py`. For each run, `main.py` calls `config_creator.py` to generate a random combination of parameters for one run. Based on the techniques / parameters switched on, `main.py` runs through preprocessing, model building, model compiling, and model training.
 
 ### training logs
 `model.fit` is called with `SMICallback()`as callback function:
