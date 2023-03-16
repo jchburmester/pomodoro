@@ -1,19 +1,23 @@
+# External imports
 import os
 import numpy as np
 import pandas as pd
 import yaml
-import seaborn as sns
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
+
 from sklearn.model_selection import train_test_split
 from yaml.loader import SafeLoader
 from matplotlib.colors import ListedColormap
 #from pandas_profiling import ProfileReport
 
-# set parent directory
+# Set parent directory
 parent_dir = os.path.dirname(os.getcwd())
 
-'''Reading the yaml file with all parameters.'''
+
+#####################################################################################
+############################ Loading data ###########################################
+#####################################################################################
 
 # Opening the yaml file
 with open('./config.yaml', 'r') as stream:
@@ -25,19 +29,25 @@ with open('./config.yaml', 'r') as stream:
         para_np = np.array([[val for val in p['values']] for p in parameters['configuration'].values()])
         # Store keys
         config_keys = parameters['configuration'].keys()
-        # create dictionary with all the parameters
+        # Store keys and values
         config_dict = {key: para_np[i] for i, key in enumerate(config_keys)}
     
     except yaml.YAMLError as e:
         print(e)
 
 
+#####################################################################################
+############################ Helper functions #######################################
+#####################################################################################
+
+# To load the data with pandas
 def read_logs_with_pd(csv_file):
     df = pd.read_csv(csv_file)
 
     return df
 
 
+# To extract parameters from the yaml file
 def get_parameters(run):
     with open(os.path.join(parent_dir, 'runs', run, 'parameters.yaml'), 'r') as stream:
         try:
@@ -48,81 +58,57 @@ def get_parameters(run):
             print(e)
 
 
-def get_best_acc():
-    val_acc = []
+#####################################################################################
+############################ Analysis ###############################################
+#####################################################################################
 
-    # get validation accuracy for each run
+# To get the best 5 runs based on validation accuracy, gpu power draw, or efficiency
+def get_best_5_runs(mode):
+    '''mode: acc, gpu, or eff'''
+
+    metrics = []
+    top_5_runs_dict = {}
+
     for run in os.listdir(os.path.join(parent_dir, 'runs')):
         logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
-        val_acc.append(logs['val_accuracy'].iloc[-2])
+        if mode == 'acc':
+            metrics.append(logs['val_accuracy'].iloc[-2])
+        elif mode == 'gpu':
+            metrics.append(logs['gpu_power_W'].mean())
+        elif mode == 'eff':
+            metrics.append((logs['val_accuracy'].iloc[-2])/(logs['gpu_power_W'].mean()))
+        else:
+            print('Invalid mode. Please choose from acc, gpu, or eff.')
 
-    # get best 5 runs, sorted automatically
-    val_acc = pd.Series(val_acc)
-    best_5_runs = val_acc.nlargest(5).index
+    metrics = pd.Series(metrics)
 
-    # for best runs, get index and paths to logs and parameters file
-    best_5_runs_dict = {}
-    
-    for run in best_5_runs:
-        best_5_runs_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
-                                   'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml')}
-    
-    return best_5_runs_dict
+    if mode == 'acc':
+        top_5 = metrics.nlargest(5).index
+    elif mode == 'gpu':
+        top_5 = metrics.nsmallest(5).index
+    elif mode == 'eff':
+        top_5 = metrics.nlargest(5).index
 
-
-def get_lowest_gpu():
-    power_draw = []
-    
-    # get power draw for each run
-    for run in os.listdir(os.path.join(parent_dir, 'runs')):
-        logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
-        power_draw.append(logs['gpu_power_W'].mean())
-    
-    # get lowest 5 runs, sorted automatically
-    power_draw = pd.Series(power_draw)
-    lowest_5_runs = power_draw.nsmallest(5).index
-
-    # for lowest runs, get index and paths to logs and parameters file
-    lowest_5_runs_dict = {}
-    for run in lowest_5_runs:
-        lowest_5_runs_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
-                                     'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml')}
-  
-    return lowest_5_runs_dict
-
-
-def get_best_eff():
-
-    eff = []
-
-    # get validation accuracy and power draw for each run
-    for run in os.listdir(os.path.join(parent_dir, 'runs')):
-        logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
-        eff.append((logs['val_accuracy'].iloc[-2])/(logs['gpu_power_W'].mean()))
-
-    # get best 5 runs, sorted automatically
-    eff = pd.Series(eff)
-    best_5_eff = eff.nlargest(5).index
-
-    # for best runs, get index and paths to logs and parameters file
-    best_5_eff_dict = {}
-    for run in best_5_eff:
-        best_5_eff_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
+    # Store best 5 runs in dictionary
+    for run in top_5:
+        top_5_runs_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
                                   'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml')}
-        
-    return best_5_eff_dict
+    
+    return top_5_runs_dict
 
 
+# To get dataframe with all runs and their parameters
 def get_all_runs():
     
+    # Get all parameter titles
     para_np_array = np.array(para_np).flatten()
     df = pd.DataFrame(columns=para_np_array)
 
-    # get all runs and sort them by their best validation accuracy (second last row of each run)
+    # Get all runs and sort them by their best validation accuracy
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
-    # sort runs by validation accuracy
     all_runs.sort(key=lambda x: read_logs_with_pd(os.path.join(parent_dir, 'runs', x, 'logs.csv'))['val_accuracy'].iloc[-2], reverse=True)
     
+    # Store in the dataframe the parameters for each run
     for run in all_runs:
         try:
             run_parameters = get_parameters(run)
@@ -137,32 +123,33 @@ def get_all_runs():
     return df
 
 
+# To get the baseline run for comparison
 def get_baseline():
 
-    # get baseline logs and parameters of run 001
+    # Get baseline logs and parameters
     baseline_logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', '001', 'logs.csv'))
     baseline_parameters = get_parameters('001')
 
-    # store in dictionary
+    # Store in dictionary
     baseline_dict = {'logs': baseline_logs,
                         'parameters': baseline_parameters}
     
     return baseline_dict
 
 
+# To get all runs with validation accuracy above 80%
 def get_above_80():
-    '''A function to get all runs with validation accuracy above 80%.
-    It returns all runs above 80% accuracy and its parameters and power draw.'''
+
+    # Get all parameter titles
     para_np_array = np.array(para_np).flatten()
     df = pd.DataFrame(columns=['run', 'val_accuracy', 'parameters', 'power_draw'])
 
-    # get all runs and sort them by their best validation accuracy (second last row of each run)
+    # Get all runs and sort them by their best validation accuracy
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
-    # sort runs by validation accuracy
     all_runs.sort(key=lambda x: read_logs_with_pd(os.path.join(parent_dir, 'runs', x, 'logs.csv'))['val_accuracy'].iloc[-2], reverse=True)
-    # only take runs with validation accuracy above 80%
-    all_runs = [run for run in all_runs if read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2] > 0.75]
-    # store in the dataframe the parameters and power draw for each run
+    all_runs = [run for run in all_runs if read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2] > 0.80]
+
+    # Store in the dataframe the parameters and power draw for each run
     for run in all_runs:
         try:
             run_parameters = get_parameters(run)
@@ -176,26 +163,28 @@ def get_above_80():
         except:
             print('Error in run: ', run)
 
-    # get rid of column runs
+    # Drop column runs
     df = df.drop(columns=['run'])
     
     return df
 
 
-def create_heatmap(df, config_dict, para_np):
+#####################################################################################
+############################ Visualization ##########################################
+#####################################################################################
 
+# To create a heatmap of selected runs
+def create_heatmap(df, para_np):
+
+    # Get all parameter titles
     para_np_list = np.array(para_np).flatten().tolist()
 
     # access only the parameters column in the dataframe
     df_new = df['parameters'].apply(pd.Series)
 
-    print(df_new)
     df_array = df_new.to_numpy(dtype=float)
     
-    #config_keys = list(config_dict.keys())
-    #config_keys_list = [config_keys[i//4] if i%4==0 else '' for i in range(len(para_np_list))]
-
-    # Create a heatmap with Seaborn
+    # Create a heatmap
     colors = ['#e6eaeb', '#3b0e1a'] # define your own color scheme
     cmap = ListedColormap(colors)
     fig, ax = plt.subplots(figsize=(16, 12))
@@ -203,58 +192,37 @@ def create_heatmap(df, config_dict, para_np):
 
     plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
 
+    # Title and labels
     ax.set_ylabel('') # Remove y-axis label
-
-    # Set the tick labels
     ax.set_xticks(np.arange(len(para_np_list)))
     ax.set_xticklabels(para_np_list, rotation=90)
-
-    # Set the top labels
-    #ax2 = ax.twiny()
-    #ax2.set_xticks(np.arange(len(para_np_list)))
-    #ax2.set_xticks(ax.get_xticks() + 0.5)
-    #ax2.set_xticklabels(config_keys_list, rotation=45)
-    #ax2.tick_params(axis='x')
-
-    # Set the plot title
     ax.set_title('Parameter heatmap for all runs above 75% accuracy', fontsize=16)
-    
-    # have as y label on the left the accuracy values from the original dataframe column val_accuracy
     ax.set_yticks(np.arange(len(df['val_accuracy'])))
     ax.set_yticklabels(df['val_accuracy'], rotation=0)
-
-    # have as y label on the right the power draw values from the original dataframe column power_draw
     ax2 = ax.twinx()
     ax2.set_yticks(np.arange(len(df['power_draw'])))
     ax2.set_yticks(ax.get_yticks())
-    # round the power draw values to 2 decimals
     ax2.set_yticklabels([round(x, 2) for x in df['power_draw']], rotation=0)
     ax2.tick_params(axis='y')
 
-
     plt.show()
 
-
+# To create a summary CSV file for all runs
 def create_summary_csv():
-    # Define the path to the runs directory
+    
     runs_dir = "runs/"
-
-    # Create an empty list to hold the data for each run
     data = []
 
-    # Loop through each subdirectory in the runs directory
+    # Extract data for each run
     for subdir in sorted(os.listdir(runs_dir)):
-        # Check if the subdirectory is a valid run (has a parameters.yaml file)
         params_file = os.path.join(runs_dir, subdir, "parameters.yaml")
+        
         if os.path.exists(params_file):
-            # Load the parameters from the YAML file
+
             with open(params_file, "r") as f:
                 params = yaml.safe_load(f)
 
-            # Remove seed
             params.pop("seed", None)
-            
-            # Read the logs.csv file into a DataFrame
             logs_file = os.path.join(runs_dir, subdir, "logs.csv")
             logs_df = pd.read_csv(logs_file)
             
@@ -288,6 +256,12 @@ def create_summary_csv():
     profile = ProfileReport(df, title="Runs Summary Report")
     profile.to_file(output_file="runs_summary_report.html")
 
+
+#####################################################################################
+############################ Statistics for Report ##################################
+#####################################################################################
+
+# To get the average power draw of all 
 def gpu_per_parameter():
     '''A function that stores in a new dataframe the power draws for each parameter.'''
 
@@ -424,12 +398,11 @@ def stats(df):
     # Print the model summary
     print(model.summary())
 
-
-
+#####################################################################################
 
 if __name__ == '__main__':
     # create_summary_csv()
-    # create_heatmap(get_above_80(), config_dict, para_np)
+    # create_heatmap(get_above_80(), para_np)
     gpu_p_p, df = gpu_per_parameter()
     stats(df)
     print(config_dict)

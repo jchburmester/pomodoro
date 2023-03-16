@@ -7,6 +7,8 @@ import tensorflow as tf
 import time
 
 class SMICallback(tf.keras.callbacks.Callback):
+    '''Callback to log GPU metrics using NVIDIA SMI'''
+    
     def __init__(self, interval=1):
         super(SMICallback, self).__init__()
         self.interval = interval
