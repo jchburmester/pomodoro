@@ -42,19 +42,19 @@ parser.add_argument('--seed', type=int, default=22, help='seed for the random nu
 # Parse the arguments
 args = parser.parse_args()
 
-
 #####################################################################################
 ############################ Initialise Seed ########################################
 #####################################################################################
 
+# Set the seed
 if args.seed != 22:
     SEED = args.seed
-
 
 #####################################################################################
 ############################ Initialise Parameters ##################################
 #####################################################################################
 
+# Load the parameter configuration
 parameters = random_config()
 
 # Run training with the base line parameters
@@ -73,6 +73,7 @@ if DEBUG:
 ############################ Create Folders & Parameter File ########################
 #####################################################################################
 
+# Create a folder for the run
 run_dir = create_subfolder()
 
 # Store parameter configuration in yaml file
@@ -90,8 +91,8 @@ with open(os.path.join('runs', run_dir, 'parameters.yaml'), 'w') as f:
 ############################ Load data ##############################################
 #####################################################################################
 
+# Load the cifar100 dataset
 (x_train, y_train), (_, _) = tf.keras.datasets.cifar100.load_data()
-
 
 #####################################################################################
 ############################ Preprocessing ##########################################
@@ -329,7 +330,7 @@ if parameters['lr_schedule'] == 'constant':
 elif parameters['lr_schedule'] == 'exponential':
     learning_rate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         learning_rate, 
-        decay_steps=1000, # This should be another parameter
+        decay_steps=1000,
         decay_rate=0.96,
         staircase=True)
     
@@ -399,6 +400,10 @@ if parameters['internal'] == 'pre_quantization' and parameters['precision'] != '
 
     print('\n'+'Pre-quantizing model.'+'\n')
 
+# Pre-quantization and global policy float16 are not compatible internally, the some values 
+# are already truncated and the quantized model does not have checks for that (yet)
+
+# If pre-quantization is specified but global policy float16 is also specified, do not quantize
 elif parameters['internal'] == 'pre_quantization' and parameters['precision'] == 'global_policy_float16':
     print('\n'+'Not quantizing because of global policy float16.'+'\n')
 
@@ -448,6 +453,7 @@ combined_model.fit(
 ############################ Post Quantization ######################################
 #####################################################################################
 
+# Post-quantize the model if specified in the parameter value
 if parameters['internal'] == 'post_quantization' and parameters['precision'] != 'global_policy_float16':
 
     # Convert the data to float16 (needed for quantization)
@@ -458,6 +464,7 @@ if parameters['internal'] == 'post_quantization' and parameters['precision'] != 
     quantize_model = tfmot.quantization.keras.quantize_model
     combined_model = quantize_model(combined_model.layers[1])
 
+    # You have to recompile the model after quantization
     combined_model.compile(
             optimizer = optimizer, 
             loss=tf.keras.losses.CategoricalCrossentropy(),
@@ -467,9 +474,12 @@ if parameters['internal'] == 'post_quantization' and parameters['precision'] != 
 
     print('\n'+'Post-quantized model.'+'\n')
 
+# Post-quantization and global policy float16 are not compatible internally, the some values
+# are already truncated and the quantized model does not have checks for that (yet)
+
+# If post-quantization is specified but global policy float16 is also specified, do not quantize
 elif parameters['internal'] == 'post_quantization' and parameters['precision'] == 'global_policy_float16':
     print('\n'+'Not quantizing because of global policy float16.'+'\n')
-
 
 #####################################################################################
 ############################ Testing ################################################
