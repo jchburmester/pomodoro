@@ -40,15 +40,19 @@ with open('./config.yaml', 'r') as stream:
 ############################ Helper functions #######################################
 #####################################################################################
 
-# To load the data with pandas
 def read_logs_with_pd(csv_file):
+    """
+    Read the logs.csv file with pandas
+    """
     df = pd.read_csv(csv_file)
 
     return df
 
 
-# To extract parameters from the yaml file
 def get_parameters(run):
+    """
+    Get the parameters of a run
+    """
     with open(os.path.join(parent_dir, 'runs', run, 'parameters.yaml'), 'r') as stream:
         try:
             parameters = yaml.load(stream, Loader=SafeLoader)
@@ -64,7 +68,14 @@ def get_parameters(run):
 
 # To get the best 5 runs based on validation accuracy, gpu power draw, or efficiency
 def get_best_5_runs(mode):
-    '''mode: acc, gpu, or eff'''
+    """
+    Get the best 5 runs based on validation accuracy, gpu power draw, or efficiency
+    
+        Parameter:
+        ----------
+            mode : string
+                options: 'acc', 'gpu', 'eff'
+    """
 
     metrics = []
     top_5_runs_dict = {}
@@ -97,8 +108,10 @@ def get_best_5_runs(mode):
     return top_5_runs_dict
 
 
-# To get dataframe with all runs and their parameters
 def get_all_runs():
+    """
+    Get all runs and their respective parameter values
+    """
     
     # Get all parameter titles
     para_np_array = np.array(para_np).flatten()
@@ -123,8 +136,10 @@ def get_all_runs():
     return df
 
 
-# To get the baseline run for comparison
 def get_baseline():
+    """
+    Get baseline run for later comparison
+    """
 
     # Get baseline logs and parameters
     baseline_logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', '001', 'logs.csv'))
@@ -137,8 +152,10 @@ def get_baseline():
     return baseline_dict
 
 
-# To get all runs with validation accuracy above 80%
 def get_above_80():
+    """
+    Get all runs with validation accuracy above 80%
+    """
 
     # Get all parameter titles
     para_np_array = np.array(para_np).flatten()
@@ -169,46 +186,10 @@ def get_above_80():
     return df
 
 
-#####################################################################################
-############################ Visualization ##########################################
-#####################################################################################
-
-# To create a heatmap of selected runs
-def create_heatmap(df, para_np):
-
-    # Get all parameter titles
-    para_np_list = np.array(para_np).flatten().tolist()
-
-    # access only the parameters column in the dataframe
-    df_new = df['parameters'].apply(pd.Series)
-
-    df_array = df_new.to_numpy(dtype=float)
-    
-    # Create a heatmap
-    colors = ['#e6eaeb', '#3b0e1a'] # define your own color scheme
-    cmap = ListedColormap(colors)
-    fig, ax = plt.subplots(figsize=(16, 12))
-    im = ax.imshow(df_array, cmap=cmap, aspect='auto')
-
-    plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
-
-    # Title and labels
-    ax.set_ylabel('') # Remove y-axis label
-    ax.set_xticks(np.arange(len(para_np_list)))
-    ax.set_xticklabels(para_np_list, rotation=90)
-    ax.set_title('Parameter heatmap for all runs above 75% accuracy', fontsize=16)
-    ax.set_yticks(np.arange(len(df['val_accuracy'])))
-    ax.set_yticklabels(df['val_accuracy'], rotation=0)
-    ax2 = ax.twinx()
-    ax2.set_yticks(np.arange(len(df['power_draw'])))
-    ax2.set_yticks(ax.get_yticks())
-    ax2.set_yticklabels([round(x, 2) for x in df['power_draw']], rotation=0)
-    ax2.tick_params(axis='y')
-
-    plt.show()
-
-# To create a summary CSV file for all runs
 def create_summary_csv():
+    """
+    Extract the parameters and logs for each run and stores them in a CSV file
+    """
     
     runs_dir = "runs/"
     data = []
@@ -261,34 +242,30 @@ def create_summary_csv():
 ############################ Statistics for Report ##################################
 #####################################################################################
 
-# To get the average power draw of all 
 def gpu_per_parameter():
-    '''A function that stores in a new dataframe the power draws for each parameter.'''
+    """
+    Store in a new dataframe the power draws for each parameter
+    """
 
-    # create a dataframe to store the power draw for each parameter
+    # Extract power draw and parameters for each run
     df = pd.DataFrame(columns=['parameters', 'power_draw'])
-
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
 
-    # for every run get the power draw and store it in the dataframe together with a True for the parameter that was used
     for run in all_runs:
         try:
             power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
-            # extract the parameter that was used
             parameters = get_parameters(run)
-            # remove first element and the last two
             del parameters['model']
             del parameters['seed']
             del parameters['n_parameters']
             del parameters['test_accuracy']
 
-            # append the power draw to the dataframe
             df = df.append({'parameters': parameters, 'power_draw': power_draw}, ignore_index=True)
 
         except:
             print('Error in run: ', run)
 
-    # create a dictionary to store the power draws for each parameter
+
     triplets_list = []
 
     # for every combination of key value pairs in the dataframe, store the power draw in the dictionary
@@ -313,90 +290,104 @@ def gpu_per_parameter():
     triplets_dict.pop(('batch_size', 1))
     return triplets_dict, df
 
-def plot_triplets(dic, _):
-
-    # plot the results
-    # x axis to be wide and showing the parameters (keys) with the y axis showing the values / Power draw
-    # the data points are to be indicates as scatters
-
-    # create a figure
-    fig, ax = plt.subplots(figsize=(30, 15))
-
-    # have more space to the edges of the window
-    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.35)
-    
-    # set the title
-    ax.set_title('Power draw per parameter value', fontsize=16)
-
-    # set the x axis label
-    ax.set_xlabel('Parameter value', fontsize=14)
-
-    # set the y axis label
-    ax.set_ylabel('Power draw (W)', fontsize=14)
-
-    # set the x axis ticks
-    ax.set_xticks(np.arange(len(dic.keys())))
-
-    # set the x axis tick labels
-    ax.set_xticklabels([key[0] + ' ' + str(key[1]) for key in dic.keys()], rotation=90)
-
-    # set the y axis ticks
-    ax.set_yticks(np.arange(0, 100, 10))
-
-    # set the y axis tick labels
-    ax.set_yticklabels(np.arange(0, 100, 10), rotation=0)
-
-    # set the grid
-    ax.grid(True)
-
-    # indicate the means in the each parameter value combination
-    ax.hlines([np.mean(dic[key]) for key in dic.keys()], xmin=np.arange(len(dic.keys())) - 0.4, xmax=np.arange(len(dic.keys())) + 0.4, color='red', label='Mean')
-
-
-    # set the legend
-    ax.legend()
-
-    # plot the data
-    for i, key in enumerate(dic.keys()):
-        ax.scatter([i] * len(dic[key]), dic[key], s=50, alpha=0.5)
-
-    # plot
-    plt.show()
-
 
 def stats(df):
-    '''A function that takes as input a dictionary with the power draws for each parameter. It then stores each run in a dataframe together with the parameters.
-    The columns of the dataframe are called run_id, preprocessing, augmentation, etc (all keys in the dictionary, 10 in total), power draw, and the rows are the runs.'''
+    """
+    Inference statistics to see how the parameters affect the power draw
+    """
 
-    # create a dataframe to store the power draw for each parameter
+    # For every run, check for the parameter value and store it under the respective column together with the power draw
     df_new = pd.DataFrame(columns=['run_id', 'power_draw','preprocessing', 'augmentation', 'batch_size', 'lr', 'lr_schedule', 'partitioning', 'optimizer', 'optimizer_momentum', 'internal', 'precision'])
-
-    # for every run, check for the parameter value and store it under the respective column, also store the power draw
+    
     for i in range(len(df)):
         for key, value in df['parameters'][i].items():
             df_new.loc[i, key] = value
         df_new.loc[i, 'power_draw'] = df['power_draw'][i]
         df_new.loc[i, 'run_id'] = i
     
-    # drop first row
     df_new = df_new.drop(0)
-
-
-    # drop the run_id column
     df_new = df_new.drop(['run_id'], axis=1)
 
+    # One-hot encode the categorical variables
     df_sm = pd.get_dummies(df_new, columns=['preprocessing', 'augmentation', 'batch_size', 'lr', 'lr_schedule', 'partitioning', 'optimizer', 'optimizer_momentum', 'internal', 'precision'])
  
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(df_sm.drop(['power_draw'], axis=1), df_sm['power_draw'].astype(float), test_size=0.2)
-
-
+    # Split the data
+    X_train, _, y_train, _ = train_test_split(df_sm.drop(['power_draw'], axis=1), df_sm['power_draw'].astype(float), test_size=0.2)
 
     # Fit a multiple linear regression model using statsmodels
     model = sm.OLS(y_train, X_train).fit()
 
     # Print the model summary
     print(model.summary())
+
+
+#####################################################################################
+############################ Visualization ##########################################
+#####################################################################################
+
+def create_heatmap(df, para_np):
+    """
+    Creating a heatmap of the selected runs
+    """
+
+    # Get all parameter titles
+    para_np_list = np.array(para_np).flatten().tolist()
+
+    # access only the parameters column in the dataframe
+    df_new = df['parameters'].apply(pd.Series)
+
+    df_array = df_new.to_numpy(dtype=float)
+    
+    # Create a heatmap
+    colors = ['#e6eaeb', '#3b0e1a'] # define your own color scheme
+    cmap = ListedColormap(colors)
+    fig, ax = plt.subplots(figsize=(16, 12))
+    im = ax.imshow(df_array, cmap=cmap, aspect='auto')
+
+    plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
+
+    # Title and labels
+    ax.set_ylabel('') # Remove y-axis label
+    ax.set_xticks(np.arange(len(para_np_list)))
+    ax.set_xticklabels(para_np_list, rotation=90)
+    ax.set_title('Parameter heatmap for all runs above 75% accuracy', fontsize=16)
+    ax.set_yticks(np.arange(len(df['val_accuracy'])))
+    ax.set_yticklabels(df['val_accuracy'], rotation=0)
+    ax2 = ax.twinx()
+    ax2.set_yticks(np.arange(len(df['power_draw'])))
+    ax2.set_yticks(ax.get_yticks())
+    ax2.set_yticklabels([round(x, 2) for x in df['power_draw']], rotation=0)
+    ax2.tick_params(axis='y')
+
+    plt.show()
+
+
+def plot_triplets(dic, _):
+    """
+    Plot the power draw per parameter value
+    """
+
+    fig, ax = plt.subplots(figsize=(30, 15))
+    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.35)
+
+    # Title and labels
+    ax.set_title('Power draw per parameter value', fontsize=16)
+    ax.set_xlabel('Parameter value', fontsize=14)
+    ax.set_ylabel('Power draw (W)', fontsize=14)
+    ax.set_xticks(np.arange(len(dic.keys())))
+    ax.set_xticklabels([key[0] + ' ' + str(key[1]) for key in dic.keys()], rotation=90)
+    ax.set_yticks(np.arange(0, 100, 10))
+    ax.set_yticklabels(np.arange(0, 100, 10), rotation=0)
+    ax.grid(True)
+    ax.hlines([np.mean(dic[key]) for key in dic.keys()], xmin=np.arange(len(dic.keys())) - 0.4, xmax=np.arange(len(dic.keys())) + 0.4, color='red', label='Mean')
+    ax.legend()
+
+    # Plot the data
+    for i, key in enumerate(dic.keys()):
+        ax.scatter([i] * len(dic[key]), dic[key], s=50, alpha=0.5)
+
+    plt.show()
+
 
 #####################################################################################
 
