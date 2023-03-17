@@ -350,10 +350,17 @@ def stats(df):
     print('The 10 parameters that have the most significant effect on the power draw are:')
     print(result_dict)
 
-    return result_dict
-
     # Print the model summary if required
-    #print(model.summary())
+    # print(model.summary())
+
+    # Store the model summary in a csv file
+    summary = model.summary()
+
+    summary_as_csv = summary.as_csv()
+    with open("statistics_summary.csv", "w") as text_file:
+        text_file.write(summary_as_csv)
+
+    return result_dict
 
 
 #####################################################################################
@@ -439,4 +446,5 @@ if __name__ == '__main__':
     # create_summary_csv()
     # create_heatmap(get_above_80(), para_np)
     #plot_triplets(gpu_p_p)
-    pass
+    _, df = gpu_per_parameter()
+    print(stats(df))
