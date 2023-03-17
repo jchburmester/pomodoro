@@ -15,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from decimal import Decimal
 
-from analysis import get_best_acc, get_lowest_gpu, get_best_eff, get_baseline
+from analysis import get_best_5_runs, get_baseline
 
 
 """
@@ -563,8 +563,8 @@ def main(acc, gpu, eff, base):
 
 # Function to create a pdf file with all results, called in main.py
 def create_pdf():
-        best_acc = get_best_acc()
-        lowest_gpu = get_lowest_gpu()
-        best_eff = get_best_eff()
+        best_acc = get_best_5_runs('acc')
+        lowest_gpu = get_best_5_runs('gpu')
+        best_eff = get_best_5_runs('eff')
         baseline = get_baseline()
         main(best_acc, lowest_gpu, best_eff, baseline)

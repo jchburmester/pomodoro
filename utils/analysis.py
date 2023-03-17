@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import yaml
 import matplotlib.pyplot as plt
+import seaborn as sns
 import statsmodels.api as sm
 
 from sklearn.model_selection import train_test_split
@@ -190,7 +191,7 @@ def create_summary_csv():
     Extract the parameters and logs for each run and stores them in a CSV file
     """
     
-    runs_dir = "runs/"
+    runs_dir = "./runs/"
     data = []
 
     # Extract data for each run
@@ -241,6 +242,29 @@ def create_summary_csv():
 ############################ Statistics for Report ##################################
 #####################################################################################
 
+def corr():
+    """
+    Calculate the correlation between accuracy and power draw
+    """
+
+    # Get all runs and store in a dataframe the power draw and accuracy
+    df = pd.DataFrame(columns=['power_draw', 'accuracy'])
+    all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
+
+    for run in all_runs:
+        try:
+            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
+            accuracy = get_parameters(run)['test_accuracy']
+            df = df.append({'power_draw': power_draw, 'accuracy': accuracy}, ignore_index=True)
+
+        except:
+            print('Error in run: ', run)
+    
+    # Calculate the correlation
+    corr = df['power_draw'].corr(df['accuracy'])
+    print('Correlation between accuracy and power draw: ', corr)
+
+
 def gpu_per_parameter():
     """
     Store in a new dataframe the power draws for each parameter
@@ -267,14 +291,14 @@ def gpu_per_parameter():
 
     triplets_list = []
 
-    # for every combination of key value pairs in the dataframe, store the power draw in the dictionary
+    # For every combination of key value pairs in the dataframe, store the power draw in the dictionary
     for i in range(len(df)):
         for key, value in df['parameters'][i].items():
             # store triplets of parameter, value and power draw and append it to a list
             triplet = (key, value, df['power_draw'][i])
             triplets_list.append(triplet)
 
-    # combine all triplets that share the first two elements (parameter and value) and store the power draw in a list for each parameter value combination
+    # Combine all triplets that share the first two elements (parameter and value) and store the power draw in a list for each parameter value combination
     triplets_dict = {}
     for triplet in triplets_list:
         if triplet[0:2] in triplets_dict:
@@ -282,10 +306,9 @@ def gpu_per_parameter():
         else:
             triplets_dict[triplet[0:2]] = [triplet[2]]
     
-    # sort by first element of the tuple
     triplets_dict = dict(sorted(triplets_dict.items(), key=lambda item: item[0]))
     
-    # drop batch size 1
+    # Drop batch size 1
     triplets_dict.pop(('batch_size', 1))
     return triplets_dict, df
 
@@ -365,6 +388,48 @@ def stats(df):
 #####################################################################################
 ############################ Visualization ##########################################
 #####################################################################################
+
+def plot_distributions():
+    """
+    Plotting the distributions of accuracy and power draw
+    """
+
+    # Get all runs and store in a dataframe the power draw and accuracy
+    df = pd.DataFrame(columns=['power_draw', 'accuracy'])
+    all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
+
+    for run in all_runs:
+        try:
+            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
+            accuracy = get_parameters(run)['test_accuracy']
+            df = df.append({'power_draw': power_draw, 'accuracy': accuracy}, ignore_index=True)
+
+        except:
+            print('Error in run: ', run)
+
+    # Plot distributions
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    sns.violinplot(y='power_draw', data=df, ax=ax1, color='lightgrey', inner='point')
+    sns.violinplot(y='accuracy', data=df, ax=ax2, color='lightgrey', inner='point')
+    plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
+    
+    # Labels
+    ax1.set_xticklabels(['Power draw'])
+    ax2.set_xticklabels(['Accuracy'])
+    
+    # Titles
+    ax1.set_title('Power draw distribution')
+    ax2.set_title('Accuracy distribution')
+    
+    # Show means and medians
+    ax1.axhline(df['power_draw'].mean(), color='red', linestyle='dashed', linewidth=1)
+    ax1.axhline(df['power_draw'].median(), color='black', linestyle='dashed', linewidth=1)
+    ax2.axhline(df['accuracy'].mean(), color='red', linestyle='dashed', linewidth=1)
+    ax2.axhline(df['accuracy'].median(), color='black', linestyle='dashed', linewidth=1)
+    
+    # Save the plot
+    plt.savefig('distributions.png', dpi=300)
+
 
 def create_heatmap(df, para_np):
     """
@@ -447,4 +512,6 @@ if __name__ == '__main__':
     #plot_triplets(gpu_p_p)
     #_, df = gpu_per_parameter()
     #print(stats(df))
-    pass
+    #corr()
+    plot_distributions()
+    #pass
