@@ -12,7 +12,7 @@ https://pypi.org/project/greenscreen/ [`pip install greenscreen`]
 
 ## project and file structure
 
-The following figure displays the structure of our pipeline. It is inspired by the automated hyperparameter tuning of ![Weights & Biases](https://docs.wandb.ai/guides/sweeps):
+The following figure displays the structure of our pipeline. It is inspired by the automated hyperparameter tuning of [Weights & Biases](https://docs.wandb.ai/guides/sweeps):
 
 ![Figure 1: project pipeline](pipeline.jpg)
 
