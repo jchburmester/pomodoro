@@ -6,9 +6,9 @@ The paper report with detailed result descriptions of this project can be found 
 
 LINK TO PAPER REPORT
 
-A python package (currently work in progress) that tracks the training efficiency of models using the `SMICallback()` (compatible for single and distributed GPU training) can be downloaded here: 
+A from this research resulting python package (currently work in progress) that tracks the training efficiency of models using the `SMICallback()` can be downloaded here: 
 
-https://pypi.org/project/greenscreen/ (`pip install greenscreen`)
+https://pypi.org/project/greenscreen/ [`pip install greenscreen`]
 
 ## project and file structure
 
