@@ -1,4 +1,3 @@
-""" https://keras.io/examples/vision/cutmix/ """
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import os
@@ -6,16 +5,27 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 @tf.function
 def cutmix(train_ds_one, train_ds_two):
+    """
+    CutMix technique to mix two images. For more details, see
+    https://keras.io/examples/vision/cutmix/.
+
+    Parameters:
+    ----------
+        train_ds_one: A dataset of one image and its label.
+        train_ds_two: A dataset of another image and its label.
+        Returns: A tuple of mixed images and labels.
+    """
 
     # Get a batch of images and labels from the dataset
     (image1, label1), (image2, label2) = train_ds_one, train_ds_two
+
+    # Get the image size
     IMG_SIZE = image1.shape[1]
 
     # Sample lambda
     def sample_beta_distribution(size, concentration_0=0.2, concentration_1=0.2):
         gamma_1_sample = tf.random.gamma(shape=[size], alpha=concentration_1)
         gamma_2_sample = tf.random.gamma(shape=[size], alpha=concentration_0)
-        
         return gamma_1_sample / (gamma_1_sample + gamma_2_sample)
 
     # Get a mixing box
@@ -47,47 +57,39 @@ def cutmix(train_ds_one, train_ds_two):
 
         return boundaryx1, boundaryy1, target_h, target_w
 
-    # Define the Beta distribution parameters
+    # Define Beta distribution parameters and sample from it
     alpha = [0.25]
     beta = [0.25]
 
-    # Get a sample from the Beta distribution
     lambda_value = sample_beta_distribution(1, alpha, beta)
 
-    # Define Lambda
+    # Define Lambda and get the bounding box offsets, heights and widths
     lambda_value = lambda_value[0][0]
-
-    # Get the bounding box offsets, heights and widths
     boundaryx1, boundaryy1, target_h, target_w = get_box(lambda_value)
 
-    # Get a patch from the second image (`image2`)
+    # Patching the images
     crop2 = tf.image.crop_to_bounding_box(
         image2, boundaryy1, boundaryx1, target_h, target_w
     )
-    # Pad the `image2` patch (`crop2`) with the same offset
     image2 = tf.image.pad_to_bounding_box(
         crop2, boundaryy1, boundaryx1, IMG_SIZE, IMG_SIZE
     )
-    # Get a patch from the first image (`image1`)
     crop1 = tf.image.crop_to_bounding_box(
         image1, boundaryy1, boundaryx1, target_h, target_w
     )
-    # Pad the `image1` patch (`crop1`) with the same offset
     img1 = tf.image.pad_to_bounding_box(
         crop1, boundaryy1, boundaryx1, IMG_SIZE, IMG_SIZE
     )
 
-    # Modify the first image by subtracting the patch from `image1`
-    # (before applying the `image2` patch)
+    # Get the CutMix image
     image1 = image1 - img1
-    # Add the modified `image1` and `image2`  together to get the CutMix image
     image = image1 + image2
 
-    # Adjust Lambda in accordance to the pixel ration
+    # Adjust Lambda
     lambda_value = 1 - (target_w * target_h) / (IMG_SIZE * IMG_SIZE)
     lambda_value = tf.cast(lambda_value, tf.float32)
 
-    # Combine the labels of both images
+    # Get mixed labels
     label = lambda_value * label1 + (1 - lambda_value) * label2
     
     image = tf.squeeze(image)
@@ -95,6 +97,10 @@ def cutmix(train_ds_one, train_ds_two):
 
     return image, label
 
+
+#####################################################################################
+
+# To test the function
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
     x_train = x_train.astype('float32') / 255.
