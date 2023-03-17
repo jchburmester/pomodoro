@@ -355,7 +355,6 @@ def stats(df):
 
     # Store the model summary in a csv file
     summary = model.summary()
-
     summary_as_csv = summary.as_csv()
     with open("statistics_summary.csv", "w") as text_file:
         text_file.write(summary_as_csv)
@@ -446,5 +445,5 @@ if __name__ == '__main__':
     # create_summary_csv()
     # create_heatmap(get_above_80(), para_np)
     #plot_triplets(gpu_p_p)
-    _, df = gpu_per_parameter()
-    print(stats(df))
+    #_, df = gpu_per_parameter()
+    #print(stats(df))
