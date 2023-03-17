@@ -55,13 +55,13 @@ subprocess.check_output(['nvidia-smi', '--query-gpu=power.draw,temperature.gpu,u
 
 <br />
 
-The logs are sent to `logs.csv` which is an individual log file for the respective run. It is sent to an individual run folder where, the parameters of the very same run are saved in `parameters.yaml`. This folder is accessed later when `main.py` calls `analysis.py` to analyse the results. The `logs.csv` file also contains training and validation accuracy next to some other data.
+The logs are sent to `logs.csv` which is an individual log file for the respective run. It is sent to an individual run folder where, the parameters of the very same run are saved in `parameters.yaml`. This folder is accessed later during the result analysis. `logs.csv` also contains training and validation accuracy next to some other data.
 
-### results analysis
-Next, `greenscreen.sh` calls `analysis.py` to compare all runs and extract the top runs in terms of accuracies, lowest GPU power draw, and overall efficiency (accuracy / GPU power draw). It also runs inference statistics to check for the influence / relevance of each parameter for the GPU power draw. After comparing all results, `analysis.py` hands over to `greenscreen.sh` the parameter value of each parameter that is most relevant for a low GPU power draw. With this, `greenscreen.sh` calls `main.py` for a final training of 50 epochs.
+### result analysis
+Next, `analysis.py` is called to compare all runs and extract the top runs in terms of accuracies, lowest GPU power draw, and overall efficiency (accuracy / GPU power draw). It also runs inference statistics to check for the influence / relevance of each parameter for the GPU power draw. After comparing all results, `analysis.py` hands over to `main.py` the parameter value of each parameter that is most relevant for a low GPU power draw. With this, `greenscreen.sh` calls `main.py` for a final training of 50 epochs.
 
 ### pdf report
-Finally, `greenscreen.sh` calls `pdf_creation.py` to produce a pdf report of the results for a clear visualisation. The report includes tables with the top runs in terms of accuracies, lowest GPU power draw, and overall efficiency (accuracy / GPU power draw) as well as plots visualising loss, accuracy, and GPU power draw during training of the most efficient run as well as the respective parameters that were switched on.
+`pdf_creation.py` can be called to produce a pdf report of the results for a clear visualisation. The report includes tables with the top runs in terms of accuracies, lowest GPU power draw, and overall efficiency (accuracy / GPU power draw) as well as plots visualising loss, accuracy, and GPU power draw during training of the most efficient run as well as the respective parameters that were switched on.
 
 END
 
