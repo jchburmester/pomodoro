@@ -304,20 +304,56 @@ def stats(df):
         df_new.loc[i, 'power_draw'] = df['power_draw'][i]
         df_new.loc[i, 'run_id'] = i
     
+    # Drop baseline run and run_id's
     df_new = df_new.drop(0)
     df_new = df_new.drop(['run_id'], axis=1)
 
     # One-hot encode the categorical variables
     df_sm = pd.get_dummies(df_new, columns=['preprocessing', 'augmentation', 'batch_size', 'lr', 'lr_schedule', 'partitioning', 'optimizer', 'optimizer_momentum', 'internal', 'precision'])
- 
+
     # Split the data
     X_train, _, y_train, _ = train_test_split(df_sm.drop(['power_draw'], axis=1), df_sm['power_draw'].astype(float), test_size=0.2)
 
     # Fit a multiple linear regression model using statsmodels
     model = sm.OLS(y_train, X_train).fit()
 
-    # Print the model summary
-    print(model.summary())
+    # Get coefficients and p-values to see which parameters are significant for the power draw
+    alpha = 0.1
+    coef = model.params
+    p_values = model.pvalues
+
+    batches = [coef[i:i+4] for i in range(0, len(coef), 4)]
+    batches = [[(coef.index[i], coef[i], p_values[i]) for i in range(len(coef)) if coef.index[i] in batch] for batch in batches]
+
+    winners = []
+    for batch in batches:
+        # sort the batch by the coef
+        batch = sorted(batch, key=lambda x: x[1])
+        # for the lowest coef, check if the p-value is below the alpha value
+        for i in range(len(batch)):
+            if batch[i][2] < alpha:
+                winners.append(batch[i][0])
+                break
+            else:
+                continue    
+        
+    # Create a dictionary with the winning parameters
+    result_dict = {}
+    for winner in winners:
+        for key in config_dict:
+            for value in config_dict[key]:
+                column_name = key + "_" + value
+                if winner == column_name:
+                    result_dict[key] = value
+    
+    # Print the winning dictionary
+    print('The 10 parameters that have the most significant effect on the power draw are:')
+    print(result_dict)
+
+    return result_dict
+
+    # Print the model summary if required
+    #print(model.summary())
 
 
 #####################################################################################
@@ -395,5 +431,4 @@ if __name__ == '__main__':
     # create_heatmap(get_above_80(), para_np)
     gpu_p_p, df = gpu_per_parameter()
     stats(df)
-    print(config_dict)
     #plot_triplets(gpu_p_p)

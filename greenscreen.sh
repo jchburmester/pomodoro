@@ -11,10 +11,10 @@
 #echo "Running baseline..."
 #python main.py --epochs 100 --baseline --model resnet50
 
-echo "Running training..."
-for i in `seq 99`;
-do python main.py --epochs 50 --model resnet50;
-done
+#echo "Running training..."
+#for i in `seq 99`;
+#do python main.py --epochs 50 --model resnet50;
+#done
 
 ############## Analysis #####################
 # run the analysis script to find a winner
