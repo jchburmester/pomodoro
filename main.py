@@ -23,6 +23,8 @@ logging.getLogger('tensorflow').setLevel(logging.ERROR)
 # Internal imports
 from utils.config_creator import base_line, random_config
 from utils.subfolder_creation import create_subfolder
+from utils.pdf_creation import create_pdf
+from utils.analysis import analysis
 from utils.preprocessing import Preprocessing
 from utils.mixup import mixup
 from utils.cutmix import cutmix
@@ -35,9 +37,11 @@ parser = argparse.ArgumentParser(description='Configuration for the training of 
 
 # Parsing arguments if required in the shell pipeline
 parser.add_argument('--baseline', action='store_true', help='argument for training the model with no or the most basic parameters')
+parser.add_argument('--final', action='store_true', help='argument for training the model with the final parameters')
 parser.add_argument('--epochs', type=int, default=1, help='number of epochs')
 parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50')
 parser.add_argument('--seed', type=int, default=22, help='seed for the random number generator')
+parser.add_argument('--report', action='store_true', help='argument for creating a training report')
 
 # Parse the arguments
 args = parser.parse_args()
@@ -480,6 +484,34 @@ if parameters['internal'] == 'post_quantization' and parameters['precision'] != 
 # If post-quantization is specified but global policy float16 is also specified, do not quantize
 elif parameters['internal'] == 'post_quantization' and parameters['precision'] == 'global_policy_float16':
     print('\n'+'Not quantizing because of global policy float16.'+'\n')
+
+
+#####################################################################################
+############################ PDF Summary ############################################
+#####################################################################################
+
+# Create a PDF summary if report argument was given
+if args.report:
+    create_pdf()
+
+
+#####################################################################################
+############################ Final Training #########################################
+#####################################################################################
+
+# Training the model with the hyperparameters that have low impact on GPU power draw
+if args.final_training:
+
+    # Get dictionary with final parameters
+    final_parameters = analysis()
+
+    # Load self-implemented ResNet50 model
+    model = ResNet50(classes=10, input_shape=(32, 32, 3))
+
+    # Call training functions etc.
+
+
+    
 
 #####################################################################################
 ############################ Testing ################################################

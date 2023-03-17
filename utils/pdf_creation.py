@@ -561,11 +561,10 @@ def main(acc, gpu, eff, base):
         PDF.dumps(out_file_handle, document)
 
 
-if __name__ == "__main__":
-    
-    ### !!! delete following line later and instead transfer path from main
-    best_acc = get_best_acc()
-    lowest_gpu = get_lowest_gpu()
-    best_eff = get_best_eff()
-    baseline = get_baseline()
-    main(best_acc, lowest_gpu, best_eff, baseline)
+# Function to create a pdf file with all results, called in main.py
+def create_pdf():
+        best_acc = get_best_acc()
+        lowest_gpu = get_lowest_gpu()
+        best_eff = get_best_eff()
+        baseline = get_baseline()
+        main(best_acc, lowest_gpu, best_eff, baseline)
