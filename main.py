@@ -47,6 +47,24 @@ parser.add_argument('--report', action='store_true', help='argument for creating
 args = parser.parse_args()
 
 #####################################################################################
+############################ Final Training #########################################
+#####################################################################################
+
+# Training the model with the hyperparameters that have low impact on GPU power draw
+if args.final_training:
+
+    # Get dictionary with final parameters
+    final_parameters = analysis()
+
+    # Load self-implemented ResNet50 model
+    model = ResNet50(classes=10, input_shape=(32, 32, 3))
+
+    # Call training functions etc.
+
+    # Exit script
+    exit()
+
+#####################################################################################
 ############################ Initialise Seed ########################################
 #####################################################################################
 
@@ -58,14 +76,13 @@ if args.seed != 22:
 ############################ Initialise Parameters ##################################
 #####################################################################################
 
-# Load the parameter configuration
-parameters = random_config()
-
 # Run training with the base line parameters
 if args.baseline:
     parameters = base_line()
 
 # Run training with random parameter configuration
+parameters = random_config()
+
 if DEBUG:
     for key, value in parameters.items():
         print(key, ':', value)
@@ -494,24 +511,6 @@ elif parameters['internal'] == 'post_quantization' and parameters['precision'] =
 if args.report:
     create_pdf()
 
-
-#####################################################################################
-############################ Final Training #########################################
-#####################################################################################
-
-# Training the model with the hyperparameters that have low impact on GPU power draw
-if args.final_training:
-
-    # Get dictionary with final parameters
-    final_parameters = analysis()
-
-    # Load self-implemented ResNet50 model
-    model = ResNet50(classes=10, input_shape=(32, 32, 3))
-
-    # Call training functions etc.
-
-
-    
 
 #####################################################################################
 ############################ Testing ################################################
