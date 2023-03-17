@@ -8,20 +8,17 @@ from random import sample
 
 class Preprocessing(tf.keras.layers.Layer):
 
-    def __init__(self, seed, data_shape=(256,256,3), random=False):
+    def __init__(self, seed, random=False):
         """
         Constructor.
 
         Parameters:
         ----------
-            data_shape : tuple
-                shape of input data. Defaults to standard RGB image shape.
-            normalize : bool
-                if normalization should be applied.
-            scale : bool
-                if scaling should be applied.
-            augment : bool
-                if augmentation should be applied.
+            seed : int
+                for reproduction
+            random : Bool
+                True if preprocessing steps should be added. False if no preprocessing or new partitioning
+
         """
         super(Preprocessing, self).__init__()
         
