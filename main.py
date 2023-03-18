@@ -23,7 +23,7 @@ logging.getLogger('tensorflow').setLevel(logging.ERROR)
 # Internal imports
 from utils.config_creator import base_line, random_config
 from utils.subfolder_creation import create_subfolder
-from utils.pdf_creation import create_pdf
+#from utils.pdf_creation import create_pdf
 from utils.analysis import analysis
 from utils.preprocessing import Preprocessing
 from utils.mixup import mixup
@@ -46,23 +46,8 @@ parser.add_argument('--report', action='store_true', help='argument for creating
 # Parse the arguments
 args = parser.parse_args()
 
-#####################################################################################
-############################ Final Training #########################################
-#####################################################################################
-
-# Training the model with the hyperparameters that have low impact on GPU power draw
-if args.final_training:
-
-    # Get dictionary with final parameters
-    final_parameters = analysis()
-
-    # Load self-implemented ResNet50 model
-    model = ResNet50(classes=10, input_shape=(32, 32, 3))
-
-    # Call training functions etc.
-
-    # Exit script
-    exit()
+# Flag for training mode: Final training trains model with the hyperparameters that have low impact on GPU power draw
+final_training = False
 
 #####################################################################################
 ############################ Initialise Seed ########################################
@@ -80,8 +65,19 @@ if args.seed != 22:
 if args.baseline:
     parameters = base_line()
 
+# Run training with final parameters
+if args.final:
+    # Set flag to true
+    final_training
+    
+    parameters = {'preprocessing': 'robust_scaling', 'augmentation': 'mixup', 'batch_size': '32', 'lr': '0.00015', 'lr_schedule': 'exponential', 
+    'partitioning': '90-5-5', 'optimizer': 'RMSProp', 'optimizer_momentum': '0.0', 'internal': 'post_quantization', 'precision': 'global_policy_float16'}
+
+    #parameters = analysis()
+
 # Run training with random parameter configuration
-parameters = random_config()
+else:
+    parameters = random_config()
 
 if DEBUG:
     for key, value in parameters.items():
@@ -169,7 +165,7 @@ if parameters['augmentation'] == 'cutmix':
     mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
     data = mix_ds.map(lambda ds1, ds2: cutmix(ds1, ds2), num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
     assert data.as_numpy_iterator().next()[0].shape[1:4] == x_train.shape[1:4]
-    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
+    preprocessing_layer = Preprocessing(seed=SEED, random=False)
 
     if DEBUG:
         image_batch, label_batch = next(iter(data))
@@ -220,7 +216,7 @@ elif parameters['augmentation'] == 'mixup':
     mix_ds = tf.data.Dataset.zip((mix_ds1, mix_ds2))
     data = mix_ds.map(lambda ds1, ds2: mixup(ds1, ds2, 0.2), num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
     # assert data.as_numpy_iterator().next()[0].shape == x_train.shape[1:4]
-    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
+    preprocessing_layer = Preprocessing(seed=SEED, random=False)
 
     if DEBUG:   
         image_batch, label_batch = next(iter(data))
@@ -266,12 +262,12 @@ elif parameters['augmentation'] == 'mixup':
 # Random augmentation
 elif parameters['augmentation'] == 'random':
     data = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
-    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=True)
+    preprocessing_layer = Preprocessing(seed=SEED, random=True)
 
 # No augmentation
 elif parameters['augmentation'] == 'None': 
     data = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(int(parameters['batch_size'])).prefetch(tf.data.experimental.AUTOTUNE)
-    preprocessing_layer = Preprocessing(SEED, data.as_numpy_iterator().next()[0].shape, random=False)
+    preprocessing_layer = Preprocessing(seed=SEED, random = False)
 
 # Shuffle the data
 data = data.shuffle(1024, seed=SEED)
@@ -436,39 +432,82 @@ else:
 ############################ Training ###############################################
 #####################################################################################
 
-# Build the model
-combined_model.build(input_shape=(None, 
-                    data.as_numpy_iterator().next()[0].shape[1],
-                    data.as_numpy_iterator().next()[0].shape[2],
-                    data.as_numpy_iterator().next()[0].shape[3])) 
+# Perform non-final training on keras model
+if(not(final_training)):
+    # Build the model
+    combined_model.build(input_shape=(None, 
+                        data.as_numpy_iterator().next()[0].shape[1],
+                        data.as_numpy_iterator().next()[0].shape[2],
+                        data.as_numpy_iterator().next()[0].shape[3])) 
 
-# Compile the model
-if parameters['internal'] == 'jit_compilation':
-    combined_model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.CategoricalCrossentropy(),
-        metrics=['accuracy'],
-        # Set jit_compile to True if specified in the parameter value
-        jit_compile=True
+    # Compile the model
+    if parameters['internal'] == 'jit_compilation':
+        combined_model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            metrics=['accuracy'],
+            # Set jit_compile to True if specified in the parameter value
+            jit_compile=True
+        )
+    else:
+        combined_model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            metrics=['accuracy'],
+            # Set jit_compile to False if other parameter values are switched on
+            jit_compile=False
+        )
+
+    # Train the model
+    combined_model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=args.epochs,
+        # Call the SMICallback callback function for logging GPU and training metrics
+        callbacks=[SMICallback()],
     )
+
+#####################################################################################
+############################ Final Training #########################################
+#####################################################################################
+
+# Perform final training on self-built model
 else:
-    combined_model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.CategoricalCrossentropy(),
-        metrics=['accuracy'],
-        # Set jit_compile to False if other parameter values are switched on
-        jit_compile=False
+    # Load self-implemented ResNet50 model
+    compiled_model = ResNet50(classes=10)
+
+    # Build the model
+    compiled_model.build(input_shape=(None, 
+                        data.as_numpy_iterator().next()[0].shape[1],
+                        data.as_numpy_iterator().next()[0].shape[2],
+                        data.as_numpy_iterator().next()[0].shape[3])) 
+
+    # Compile the model
+    if parameters['internal'] == 'jit_compilation':
+        compiled_model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            metrics=['accuracy'],
+            # Set jit_compile to True if specified in the parameter value
+            jit_compile=True
+        )
+    else:
+        compiled_model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.CategoricalCrossentropy(),
+            metrics=['accuracy'],
+            # Set jit_compile to False if other parameter values are switched on
+            jit_compile=False
+        )
+
+    # Train the model
+    compiled_model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=args.epochs,
+        # Call the SMICallback callback function for logging GPU and training metrics
+        callbacks=[SMICallback()],
     )
-
-# Train the model
-combined_model.fit(
-    train_ds,
-    validation_data=val_ds,
-    epochs=args.epochs,
-    # Call the SMICallback callback function for logging GPU and training metrics
-    callbacks=[SMICallback()],
-)
-
 
 #####################################################################################
 ############################ Post Quantization ######################################
@@ -483,10 +522,10 @@ if parameters['internal'] == 'post_quantization' and parameters['precision'] != 
     test_ds = test_ds.map(lambda x, y: (tf.cast(x, tf.dtypes.as_dtype('float16')), y))
 
     quantize_model = tfmot.quantization.keras.quantize_model
-    combined_model = quantize_model(combined_model.layers[1])
+    compiled_model = quantize_model(compiled_model.layers[1])
 
     # You have to recompile the model after quantization
-    combined_model.compile(
+    compiled_model.compile(
             optimizer = optimizer, 
             loss=tf.keras.losses.CategoricalCrossentropy(),
             metrics=['accuracy'],
@@ -508,8 +547,8 @@ elif parameters['internal'] == 'post_quantization' and parameters['precision'] =
 #####################################################################################
 
 # Create a PDF summary if report argument was given
-if args.report:
-    create_pdf()
+#if args.report:
+    #create_pdf()
 
 
 #####################################################################################
