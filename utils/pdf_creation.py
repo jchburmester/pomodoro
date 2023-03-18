@@ -15,11 +15,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from decimal import Decimal
 
-from analysis import get_best_5_runs, get_baseline
+from utils.analysis import get_best_5_runs, get_baseline
 
 
 """
-- heatmap and logs function
+- heatmap function
 - credits: https://github.com/jorisschellekens/borb-examples#321-fixedcolumnwidthtable
 - test execution from main.py
 """
@@ -183,36 +183,6 @@ def read_logs_with_pd(path_to_csv_file):
         df = pd.read_csv(path_to_csv_file)
 
         return df
-
-
-def read_logs(path_to_csv_file):
-
-    if type(path_to_csv_file) == list:
-        logs = []
-        # Opening the csv file, convert into dictionary, and append to list
-        for path in path_to_csv_file:
-            csv_file = open(path)
-            csv_reader = csv.DictReader(csv_file)
-            data = {}
-            for row in csv_reader:
-                data.update(row)
-            csv_file.close()
-            logs.append(data)
-        
-        return logs
-
-    
-    else:
-        # Opening the csv file and convert into dictionary
-        csv_file = open(path_to_csv_file)
-        csv_reader = csv.DictReader(csv_file)
-        data = {}
-        for row in csv_reader:
-            data.update(row)
-        csv_file.close()
-
-        return data
-
 
 
 def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, second, third, fourth, fifth, mode="acc"):
