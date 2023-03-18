@@ -12,17 +12,7 @@ CHANGED (from last years implementation):
 
 (- other difference: tf.keras.ResNet50 is initialized with ImageNet weights and 1000 classes per default, but we called with no pre-training so difference negligible)
 """
-
-
-
-# Imports
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from PIL import Image
-import requests
-
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
