@@ -19,75 +19,10 @@ from analysis import get_best_5_runs, get_baseline
 
 
 """
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-TO-DO: 
-- (in the end) transfer path from main and delete path in main call (bottom line of this file)
-- get run number of head folder
-- heatmap
-- 70/80/90 accuracy und Auto/Mikrowellen GPU
-- Include this in credits: https://github.com/jorisschellekens/borb-examples#321-fixedcolumnwidthtable
-- Loss plots: Title, for which runs
-- GPU: Title, for which runs, which GPU variables
-- Accuracy plots: Title, for which runs
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+- heatmap and logs function
+- credits: https://github.com/jorisschellekens/borb-examples#321-fixedcolumnwidthtable
+- test execution from main.py
 """
-
-def create_plot_loss(logs):
-
-    # exclude the pretraining and posttraining values for the loss plot
-    epochs = logs["epoch"][1:-1].tolist()
-    train_loss = logs["loss"][1:-1].tolist()
-    val_loss = logs["val_loss"][1:-1].tolist()
-
-    # plot
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    ax.plot(epochs, train_loss, label="Training Loss")
-    ax.plot(epochs, val_loss, label="Validation Loss")
-    ax.set_xlabel("Epochs")
-    ax.set_ylabel("Loss")
-    ax.set_title("Loss plot")
-    ax.legend()
-
-    return plt.gcf()
-
-
-def create_plot_acc(logs):
-
-    # exclude the pretraining and posttraining values for the accuracy plot
-    epochs = logs["epoch"][1:-1].tolist()
-    train_acc = logs["accuracy"][1:-1].tolist()
-    val_acc = logs["val_accuracy"][1:-1].tolist()
-    
-    # plot
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    ax.plot(epochs, train_acc, label="Training Accuracy")
-    ax.plot(epochs, val_acc, label="Validation Accuracy")
-    ax.set_xlabel("Epochs")
-    ax.set_ylabel("Accuracy in %")
-    ax.set_title("Accuracy plot")
-    ax.legend()
-
-    return plt.gcf()
-
-
-def create_plot_gpu(logs):
-
-    # include the pretraining and posttraining values for gpu plot
-    epochs = logs["epoch"].tolist()
-    gpu = logs["gpu_power_W"].tolist()
-    
-    # plot
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    ax.plot(epochs, gpu, label="GPU Power Consumption")
-    ax.set_xlabel("Epochs")
-    ax.set_ylabel("Consumption in kWh")
-    ax.set_title("GPU plot")
-    ax.legend()
-
-    return plt.gcf()
 
 def create_heatmap(df):
     
@@ -101,18 +36,69 @@ def create_heatmap(df):
     
     return plt.gcf()
 
+def create_gpu_plot(logs, key, title):
+    """
+    Create GPU plot for single run.
 
-def create_evaluation_plot(logs, title):
+    Parameters:
+    -----------
+        logs : 
+            logs for respective run
+        key : int
+            number of run
 
+    Returns: 
+    --------
+        plot : matplotlib.figure.Figure
+            GPU plot    
+    """
+    # convert values to lists for plotting
     all_epochs = logs["epoch"].tolist()
-    # exclude pretraining and posttraining values for loss and accuracy plots
+    gpu = logs["gpu_power_W"].tolist()
+
+    # plot
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(all_epochs, gpu, label="GPU Power Consumption")
+    ax.set_xlabel("Epochs")
+    ax.set_title(title + " (run number {})".format(key))
+    ax.set_xticks(all_epochs[::2])
+    # plot only every second xtick for better visibility
+    ax.set_xticklabels(all_epochs[::2], visible=True)
+    ax.legend()
+
+    plot = plt.gcf()
+
+    return plot
+
+
+def create_evaluation_plot(logs, key, title):
+    """
+    For single run, visualisation of loss, accuracy per epoch.
+
+    Parameters:
+    ----------
+        logs :
+            logs for respective run
+        key : int
+            number of run
+        title : str
+            plot title
+
+    Returns:
+    -------
+        plot : matplotlib.figure.Figure
+            the final plot for respective category
+    
+    """
+    # convert values to lists for plotting
     train_epochs = logs["epoch"][1:-1].tolist()
 
+    # exclude pretraining and posttraining values for loss and accuracy plots
     train_loss = logs["loss"][1:-1].tolist()
     val_loss = logs["val_loss"][1:-1].tolist()
     train_acc = logs["accuracy"][1:-1].tolist()
     val_acc = logs["val_accuracy"][1:-1].tolist()
-    gpu = logs["gpu_power_W"].tolist()
 
     # plot
     fig = plt.figure()
@@ -121,16 +107,36 @@ def create_evaluation_plot(logs, title):
     ax.plot(train_epochs, val_loss, label="Validation Loss")
     ax.plot(train_epochs, train_acc, label="Training Accuracy")
     ax.plot(train_epochs, val_acc, label="Validation Accuracy")
-    ax.plot(all_epochs, gpu, label="GPU Power Consumption")
     ax.set_xlabel("Epochs")
-    #ax.set_ylabel("Loss")
-    ax.set_title(title)
+    ax.set_title(title + " (run number {})".format(key))
+    # plot only every second xtick for better visibility
+    ax.set_xticks(train_epochs[::2])
+    ax.set_xticklabels(train_epochs[::2], visible=True)
+    # make y ticks invisible
+    ax.set_yticklabels(train_loss, visible=False)
     ax.legend()
 
-    return plt.gcf()
+    plot = plt.gcf()
+
+    return plot
 
 
 def read_params_yaml(yaml_file):
+    """
+    Reads parameters from .yaml file
+    
+    Parameters:
+    -----------
+        yaml_file : str
+            path to .yaml file
+
+    Returns:
+    --------
+        params_keys : list
+            parameter keys
+        params_values : list
+            parameter values
+    """
     # Opening the yaml file
     with open(yaml_file, 'r') as stream:
 
@@ -148,7 +154,22 @@ def read_params_yaml(yaml_file):
 
 
 def read_logs_with_pd(path_to_csv_file):
+    """
+    Reads logs from .csv file. Path can be either single path or list of paths.
 
+    Parameters:
+    ----------
+        path_to_csv_file : str or list of strings
+            path to the .csv file to be read
+    
+    Returns:
+    --------
+        df : pandas.core.frame.DataFrame
+            dataframe with logs
+    or
+        logs : list
+            list of logs
+    """
     if type(path_to_csv_file) == list:
         logs = []
         # Opening the csv file, convert into dictionary, and append to list
@@ -196,27 +217,42 @@ def read_logs(path_to_csv_file):
 
 def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, second, third, fourth, fifth, mode="acc"):
     """
-    Creates a table that shows the 5 best runs for the specified mode.
+    Creates table that shows the 5 best runs for the specified mode. Baseline run will be included as well.
+
     Parameters:
     ----------
-        layout : 
+        layout : borb.pdf.canvas.layout.page_layout.multi_column_layout.SingleColumnLayout
             Layout of current pdf
+        keys : list
+            stores the run number
+        n_params : list
+            number of parameters
+        n_params_base : int
+            number of parameters baseline
+        base : pandas.core.frame.DataFrame
+            baseline run
+        first : pandas.core.frame.DataFrame
+            best run according to mode
+        second : pandas.core.frame.DataFrame
+            second best run according to mode
+        third : pandas.core.frame.DataFrame
+        fourth : pandas.core.frame.DataFrame
+        fifth : pandas.core.frame.DataFrame
         mode : str
             Either accuracy, gpu or efficiency. Will be the parameter that the winner table is based on.
     """
 
-    # makes sure that pdf is only created if a valid mode is given
+    # make sure that pdf is only created if a valid mode is given
     if mode != "acc" and mode != "gpu" and mode != "eff":
         print("Mode must be either 'acc', 'gpu' or 'eff'.")
         return
     
+    # table for five best runs according to accuracy
     elif mode == "acc":
-
         # table heading
         layout.add(Paragraph("Table 1: The five best runs according to accuracy.",
                              font="Helvetica-Bold", font_size=10))
 
-        # acc table
         layout.add(
             FixedColumnWidthTable(number_of_columns=6, number_of_rows=7,
                                 # first column should be smaller than remaining
@@ -242,7 +278,7 @@ def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, se
             .add(Paragraph(str(n_params_base), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((base['val_accuracy'].iloc[-2])*100/(base['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
 
-            # best run according to accuracy
+            # best run
             .add(Paragraph("1."))
             .add(Paragraph(str(keys[0]), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round(first['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
@@ -285,12 +321,12 @@ def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, se
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
 
+    # table for five best runs according to gpu
     elif mode == "gpu":       
         # table heading
         layout.add(Paragraph("Table 2: The five best runs according to GPU.",
                              font="Helvetica-Bold", font_size=10))
-        
-        # gpu table
+
         layout.add(
             FixedColumnWidthTable(number_of_columns=6, number_of_rows=7, 
                                 # first column should be smaller than remaining
@@ -359,12 +395,12 @@ def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, se
             .set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
         )
 
+    # table for five best runs according to efficiency
     elif mode == "eff":
         # table heading
         layout.add(Paragraph("Table 3: The five best runs according to efficiency (acc/gpu).",
                              font="Helvetica-Bold", font_size=10))
         
-        # gpu table
         layout.add(
             FixedColumnWidthTable(number_of_columns=6, number_of_rows=7, 
                                 # first column should be smaller than remaining
@@ -390,7 +426,7 @@ def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, se
             .add(Paragraph(str(n_params_base), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round((base['val_accuracy'].iloc[-2])*100/(base['gpu_power_W'].mean()), 3)), font="Helvetica-oblique"))
 
-            # best run according to gpu
+            # best run according to eff
             .add(Paragraph("1."))
             .add(Paragraph(str(keys[0]), font="Helvetica-oblique"))
             .add(Paragraph(str(np.round(first['gpu_power_W'].mean(), 3)), font="Helvetica-oblique"))
@@ -434,23 +470,38 @@ def create_table_fivebest(layout, keys, n_params, n_params_base, base, first, se
         )
 
 
-def create_table_params(layout, params, vals, mode="acc"):
+def create_table_params(layout, params, vals, key=None, mode="acc"):
     """
-    Creates a table that displays the parameters of the winning run.
+    Creates a table that displays the parameters of the winning run, or the baseline run.
+
+    Parameters:
+    -----------
+        layout : borb.pdf.canvas.layout.page_layout.multi_column_layout.SingleColumnLayout
+            pdf layout
+        params : list 
+            parameter names of winning run
+        vals : list
+            parameter values of winning run
+        key : int
+            run number of winning run
+        mode : str
+            either 'acc', 'gpu', 'eff' or 'base'
     """    
 
-    # table heading according to mode
+    # makes sure that right mode is given
     if mode != "acc" and mode != "gpu" and mode != "eff" and mode != "base":
         print("Mode must be either 'acc', 'gpu' or 'eff'.")
         return
+    
+    # table heading according to mode    
     elif(mode=="acc"):
-        layout.add(Paragraph("Table 4: Parameter values for the winning run in accuracy.",
+        layout.add(Paragraph("Table 4: Parameter values for the winning run in accuracy (run number {}).".format(key),
                              font="Helvetica-Bold", font_size=10))
     elif(mode=="gpu"):
-        layout.add(Paragraph("Table 5: Parameter values for the winning run in GPU.",
+        layout.add(Paragraph("Table 5: Parameter values for the winning run in GPU (run number {}).".format(key),
                              font="Helvetica-Bold", font_size=10))
     elif(mode=="eff"):
-        layout.add(Paragraph("Table 6: Parameter values for the winning run in efficiency.",
+        layout.add(Paragraph("Table 6: Parameter values for the winning run in efficiency (run number {}).".format(key),
                              font="Helvetica-Bold", font_size=10))
     elif(mode=="base"):
         layout.add(Paragraph("Table 7: Parameter values for the baseline run.",
@@ -492,8 +543,25 @@ def create_table_params(layout, params, vals, mode="acc"):
 
 
 def main(acc, gpu, eff, base):
+    """
+    Creates PDF file. The PDF will contain:
+    1) Tables with measures for the five best runs in each category
+    2) Tables with the parameters of the best run in each category
+    3) Acc, loss and gpu plots for the best run in each category
 
-    # first extract all keys from acc file
+    Parameters:
+    ----------
+        acc : dict
+            logs and parameters of five best runs according to accuracy
+        gpu : dict
+            logs and parameters of five best runs according to gpu
+        eff : dict
+            logs and parameters of five best runs according to efficiency
+        base : dict
+            logs and parameters of baseline model
+    """
+
+    # first extract all keys from files
     acc_keys = list(acc.keys())
     gpu_keys = list(gpu.keys())
     eff_keys = list(eff.keys())
@@ -529,8 +597,6 @@ def main(acc, gpu, eff, base):
     logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5 = read_logs_with_pd(gpu_logs_paths)
     logs_eff1, logs_eff2, logs_eff3, logs_eff4, logs_eff5 = read_logs_with_pd(eff_logs_paths)
 
-    #logs_full = read_logs_with_pd(logs_path)
-
     # extract number of parameters from parameter files
     num_params_acc = [int(value[-2]) for value in acc_values]
     num_params_gpu = [int(value[-2]) for value in gpu_values]
@@ -542,29 +608,40 @@ def main(acc, gpu, eff, base):
     page = Page()
     document.add_page(page)
     layout = SingleColumnLayout(page)
-    #layout.vertical_margin = page.get_page_info().get_height() * Decimal(0.01)
 
+    # displays information about the five best runs according to respective category
     create_table_fivebest(layout, acc_keys, num_params_acc, num_params_base, base['logs'], logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5, mode="acc")
     create_table_fivebest(layout, gpu_keys, num_params_gpu, num_params_base, base['logs'], logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5, mode="gpu")
     create_table_fivebest(layout, eff_keys, num_params_eff, num_params_base, base['logs'], logs_eff1, logs_eff2, logs_eff3, logs_eff4, logs_eff5, mode="eff")
-    create_table_params(layout, first_acc_params, first_acc_values, mode="acc")
-    create_table_params(layout, first_gpu_params, first_gpu_values, mode="gpu")
-    create_table_params(layout, first_eff_params, first_eff_values, mode="eff")
+    
+    # for the best run of each category, display parameters in table
+    create_table_params(layout, first_acc_params, first_acc_values, acc_keys[0], mode="acc")
+    create_table_params(layout, first_gpu_params, first_gpu_values, gpu_keys[0], mode="gpu")
+    create_table_params(layout, first_eff_params, first_eff_values, eff_keys[0], mode="eff")
     create_table_params(layout, base_params, base_values, mode="base")
 
-    layout.add(Chart(create_evaluation_plot(logs_acc1, title="Best accuracy run"), width=Decimal(400), height=Decimal(256)))
-    layout.add(Chart(create_evaluation_plot(logs_gpu1, title="Best GPU run"), width=Decimal(400), height=Decimal(256)))
-    layout.add(Chart(create_evaluation_plot(logs_eff1, title="Best efficiency run"), width=Decimal(400), height=Decimal(256)))
+    # for the best run of each category, visualisation of acc, loss and gpu per epoch. Plot GPU in extra plot because of different x- and y-value range
+    layout.add(Chart(create_evaluation_plot(logs_acc1, acc_keys[0], title="Best accuracy run"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_gpu_plot(logs_acc1, acc_keys[0], title="Best accuracy run, GPU values"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_evaluation_plot(logs_gpu1, gpu_keys[0], title="Best GPU run"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_gpu_plot(logs_gpu1, gpu_keys[0], title="Best GPU run, GPU values"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_evaluation_plot(logs_eff1, eff_keys[0], title="Best efficiency run"), width=Decimal(400), height=Decimal(256)))
+    layout.add(Chart(create_gpu_plot(logs_eff1, eff_keys[0], title="Best efficiency run, GPU values"), width=Decimal(400), height=Decimal(256)))
 
     # store
     with open("result.pdf", "wb") as out_file_handle:
         PDF.dumps(out_file_handle, document)
 
 
-# Function to create a pdf file with all results, called in main.py
 def create_pdf():
+        """
+        Initiates PDF creation with all results (called in main.py)
+        """
         best_acc = get_best_5_runs('acc')
         lowest_gpu = get_best_5_runs('gpu')
         best_eff = get_best_5_runs('eff')
         baseline = get_baseline()
         main(best_acc, lowest_gpu, best_eff, baseline)
+
+
+create_pdf()
