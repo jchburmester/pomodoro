@@ -20,7 +20,7 @@ parent_dir = os.path.dirname(os.getcwd())
 #####################################################################################
 
 # Opening the yaml file
-with open('./utils/config.yaml', 'r') as stream:
+with open('./config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
@@ -81,6 +81,8 @@ def get_best_5_runs(mode):
     top_5_runs_dict = {}
 
     for run in os.listdir(os.path.join(parent_dir, 'runs')):
+        if run == '0':
+            continue
         logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
         if mode == 'acc':
             metrics.append(logs['val_accuracy'].iloc[-2])
