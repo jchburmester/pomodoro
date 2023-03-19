@@ -23,7 +23,7 @@ logging.getLogger('tensorflow').setLevel(logging.ERROR)
 # Internal imports
 from utils.config_creator import base_line, random_config
 from utils.subfolder_creation import create_subfolder
-#from utils.pdf_creation import create_pdf
+from utils.pdf_creation import create_pdf
 from utils.analysis import analysis
 from utils.preprocessing import Preprocessing
 from utils.mixup import mixup
@@ -71,7 +71,7 @@ if args.final:
     final_training
     
     parameters = {'preprocessing': 'robust_scaling', 'augmentation': 'mixup', 'batch_size': '32', 'lr': '0.00015', 'lr_schedule': 'exponential', 
-    'partitioning': '90-5-5', 'optimizer': 'RMSProp', 'optimizer_momentum': '0.0', 'internal': 'post_quantization', 'precision': 'global_policy_float16'}
+    'partitioning': '90-5-5', 'optimizer': 'RMSProp', 'optimizer_momentum': '0.0', 'internal': 'jit_compilation', 'precision': 'global_policy_float16'}
 
     #parameters = analysis()
 
@@ -547,8 +547,8 @@ elif parameters['internal'] == 'post_quantization' and parameters['precision'] =
 #####################################################################################
 
 # Create a PDF summary if report argument was given
-#if args.report:
-    #create_pdf()
+if args.report:
+    create_pdf()
 
 
 #####################################################################################
