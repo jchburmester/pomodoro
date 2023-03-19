@@ -1,9 +1,11 @@
 tensorflow
 tensorflow_model_optimization
-csv
-os
 keras
-collections
 numpy
-datetime
-argparse
+pillow
+borb
+matplotlib
+decimal
+seaborn
+statsmodels
+pandas_profiling
