@@ -614,4 +614,5 @@ def create_pdf():
         main(best_acc, lowest_gpu, best_eff, baseline)
 
 
-create_pdf()
+if __name__ == "__main__":
+    create_pdf()
