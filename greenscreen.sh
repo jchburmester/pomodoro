@@ -9,10 +9,10 @@
 ############## Main script ##################
 
 echo "Running baseline..."
-python main.py --epochs 100 --baseline --model resnet50
+python main.py --epochs 50 --baseline --model resnet50
 
 echo "Running training..."
-for i in `seq 99`;
+for i in `seq 100`;
 do python main.py --report --epochs 50 --model resnet50;
 done
 
@@ -23,6 +23,6 @@ echo "Running GPU results comparison"
 
 ############## Final Run ###################
 echo "and starting final run..."
-python main.py --final --epochs 100
+python main.py --final --epochs 50
 
 echo "Final run was finished!"

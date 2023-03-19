@@ -28,8 +28,7 @@ from utils.analysis import analysis
 from utils.preprocessing import Preprocessing
 from utils.mixup import mixup
 from utils.cutmix import cutmix
-from models.resnet50 import load_resnet50
-from models.resnet50_self import ResNet50 # self implemented resnet50
+from models.resnet50 import load_resnet50 # self implemented resnet50
 from utils.callback import SMICallback
 
 # Start a parser with the arguments
@@ -45,9 +44,6 @@ parser.add_argument('--report', action='store_true', help='argument for creating
 
 # Parse the arguments
 args = parser.parse_args()
-
-# Flag for training mode: Final training trains model with the hyperparameters that have low impact on GPU power draw
-final_training = False
 
 #####################################################################################
 ############################ Initialise Seed ########################################
@@ -67,9 +63,10 @@ if args.baseline:
 
 # Run training with final parameters
 if args.final:
-    # Set flag to true
-    final_training
-    
+
+    if DEBUG:
+        print('Final training run...')
+
     parameters = {'preprocessing': 'robust_scaling', 'augmentation': 'mixup', 'batch_size': '32', 'lr': '0.00015', 'lr_schedule': 'exponential', 
     'partitioning': '90-5-5', 'optimizer': 'RMSProp', 'optimizer_momentum': '0.0', 'internal': 'jit_compilation', 'precision': 'global_policy_float16'}
 
@@ -315,7 +312,7 @@ else:
 
 # Loading resnet50 model
 if args.model == 'resnet50':
-    model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4], weights=None)
+    model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4])
 
 else: 
     print('Model not found')
@@ -433,7 +430,7 @@ else:
 #####################################################################################
 
 # Perform non-final training on keras model
-if(not(final_training)):
+if not args.final:
     # Build the model
     combined_model.build(input_shape=(None, 
                         data.as_numpy_iterator().next()[0].shape[1],
@@ -472,9 +469,9 @@ if(not(final_training)):
 #####################################################################################
 
 # Perform final training on self-built model
-else:
+elif args.final:
     # Load self-implemented ResNet50 model
-    compiled_model = ResNet50(classes=10)
+    compiled_model = combined_model
 
     # Build the model
     compiled_model.build(input_shape=(None, 
