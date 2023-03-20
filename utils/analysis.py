@@ -20,7 +20,7 @@ parent_dir = os.path.dirname(os.getcwd())
 #####################################################################################
 
 # Opening the yaml file
-with open('./utils/config.yaml', 'r') as stream:
+with open('./config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
@@ -84,12 +84,22 @@ def get_best_5_runs(mode):
         if run == '0':
             continue
         logs = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))
+
+        # Calculate average power draw time included
+        power_draw = logs['gpu_power_W']
+        time = logs['time']
+        time = pd.to_datetime(time)
+        time = time.diff().dt.total_seconds()
+        time = time[1:].reset_index(drop=True)
+        power_draw = power_draw[1:].reset_index(drop=True)
+        total_power_draw = (power_draw * time).mean()/3600
+
         if mode == 'acc':
             metrics.append(logs['val_accuracy'].iloc[-2])
         elif mode == 'gpu':
-            metrics.append(logs['gpu_power_W'].mean())
+            metrics.append(total_power_draw)
         elif mode == 'eff':
-            metrics.append((logs['val_accuracy'].iloc[-2])/(logs['gpu_power_W'].mean()))
+            metrics.append((logs['val_accuracy'].iloc[-2])/total_power_draw)
         else:
             print('Invalid mode. Please choose from acc, gpu, or eff.')
 
@@ -273,23 +283,31 @@ def gpu_per_parameter():
     """
 
     # Extract power draw and parameters for each run
-    df = pd.DataFrame(columns=['parameters', 'power_draw'])
+    df = pd.DataFrame(columns=['run_id', 'parameters', 'total_power_draw', 'val_accuracy'])
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
 
     for run in all_runs:
         try:
-            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
+            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W']
             parameters = get_parameters(run)
+            time = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['time']
+            acc = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2]
+            id = run
+            time = pd.to_datetime(time)
+            time = time.diff().dt.total_seconds()
+            time = time[1:].reset_index(drop=True)
+            power_draw = power_draw[1:].reset_index(drop=True)
+            total_power_draw = (power_draw * time).mean()/3600
+
             del parameters['model']
             del parameters['seed']
             del parameters['n_parameters']
             del parameters['test_accuracy']
 
-            df = df.append({'parameters': parameters, 'power_draw': power_draw}, ignore_index=True)
+            df = df.append({'parameters': parameters, 'total_power_draw': total_power_draw, 'val_accuracy': acc, 'run_id': id}, ignore_index=True)
 
         except:
             print('Error in run: ', run)
-
 
     triplets_list = []
 
@@ -297,7 +315,7 @@ def gpu_per_parameter():
     for i in range(len(df)):
         for key, value in df['parameters'][i].items():
             # store triplets of parameter, value and power draw and append it to a list
-            triplet = (key, value, df['power_draw'][i])
+            triplet = (key, value, df['total_power_draw'][i])
             triplets_list.append(triplet)
 
     # Combine all triplets that share the first two elements (parameter and value) and store the power draw in a list for each parameter value combination
@@ -312,7 +330,15 @@ def gpu_per_parameter():
     
     # Drop batch size 1
     triplets_dict.pop(('batch_size', 1))
-    return triplets_dict, df
+
+    # Calculate efficiency quotient for each run
+    df['quotient'] = df['total_power_draw']/df['val_accuracy']
+
+    # Extract best run and store its parameters
+
+    best_run = df['parameters'][df['quotient'].idxmin()]
+
+    return triplets_dict, df, best_run
 
 
 def stats(df):
@@ -326,7 +352,7 @@ def stats(df):
     for i in range(len(df)):
         for key, value in df['parameters'][i].items():
             df_new.loc[i, key] = value
-        df_new.loc[i, 'power_draw'] = df['power_draw'][i]
+        df_new.loc[i, 'power_draw'] = df['total_power_draw'][i]
         df_new.loc[i, 'run_id'] = i
     
     # Drop baseline run and run_id's
@@ -376,7 +402,7 @@ def stats(df):
     print(result_dict)
 
     # Print the model summary if required
-    # print(model.summary())
+    print(model.summary())
 
     # Store the model summary in a csv file
     summary = model.summary()
@@ -502,8 +528,8 @@ def plot_triplets(dic, _):
 #####################################################################################
 
 def analysis():
-    _, df = gpu_per_parameter()
-    return stats(df)
+    _, _, best_run = gpu_per_parameter()
+    return best_run
 
 
 #####################################################################################
@@ -512,8 +538,7 @@ if __name__ == '__main__':
     # create_summary_csv()
     # create_heatmap(get_above_80(), para_np)
     #plot_triplets(gpu_p_p)
-    #_, df = gpu_per_parameter()
-    #print(stats(df))
-    #corr()
-    plot_distributions()
+    _, _, best_run = gpu_per_parameter()
+     #corr()
+    #plot_distributions()
     #pass

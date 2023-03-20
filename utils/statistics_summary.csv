@@ -1,60 +1,60 @@
                       OLS Regression Results                     
-Dep. Variable:   ,power_draw      ,  R-squared:         ,   0.764
-Model:           ,OLS             ,  Adj. R-squared:    ,   0.620
-Method:          ,Least Squares   ,  F-statistic:       ,   5.300
-Date:            ,Fri, 17 Mar 2023,  Prob (F-statistic):,1.40e-07
-Time:            ,16:29:54        ,  Log-Likelihood:    , -317.29
-No. Observations:,    80          ,  AIC:               ,   696.6
-Df Residuals:    ,    49          ,  BIC:               ,   770.4
+Dep. Variable:   ,power_draw      ,  R-squared:         ,   0.949
+Model:           ,OLS             ,  Adj. R-squared:    ,   0.918
+Method:          ,Least Squares   ,  F-statistic:       ,   30.31
+Date:            ,Mon, 20 Mar 2023,  Prob (F-statistic):,1.38e-22
+Time:            ,20:22:19        ,  Log-Likelihood:    , -89.134
+No. Observations:,    80          ,  AIC:               ,   240.3
+Df Residuals:    ,    49          ,  BIC:               ,   314.1
 Df Model:        ,    30          ,                     ,        
 Covariance Type: ,nonrobust       ,                     ,        
                                ,   coef   , std err ,    t    ,P>|t| ,  [0.025 ,  0.975] 
-preprocessing_None             ,   22.5337,    3.683,    6.119, 0.000,   15.133,   29.934
-preprocessing_minmax           ,   13.9336,    3.370,    4.134, 0.000,    7.161,   20.706
-preprocessing_robust_scaling   ,    3.5838,    4.690,    0.764, 0.448,   -5.841,   13.009
-preprocessing_standardization  ,   19.2854,    4.293,    4.492, 0.000,   10.657,   27.913
-augmentation_None              ,   19.8929,    4.001,    4.972, 0.000,   11.853,   27.933
-augmentation_cutmix            ,    5.9701,    3.875,    1.540, 0.130,   -1.818,   13.758
-augmentation_mixup             ,   10.7918,    3.515,    3.070, 0.003,    3.727,   17.856
-augmentation_random            ,   22.6815,    4.137,    5.482, 0.000,   14.367,   30.996
-batch_size_4                   ,    0.8051,    3.741,    0.215, 0.830,   -6.713,    8.323
-batch_size_32                  ,    8.2338,    4.030,    2.043, 0.046,    0.134,   16.333
-batch_size_64                  ,   11.8098,    3.717,    3.177, 0.003,    4.340,   19.279
-batch_size_128                 ,   38.4876,    4.614,    8.342, 0.000,   29.215,   47.760
-lr_0.00015                     ,   14.7076,    3.809,    3.861, 0.000,    7.053,   22.362
-lr_0.0008                      ,   17.4880,    3.893,    4.492, 0.000,    9.665,   25.311
-lr_0.00625                     ,   17.0075,    3.702,    4.594, 0.000,    9.568,   24.447
-lr_0.01                        ,   10.1333,    4.246,    2.387, 0.021,    1.601,   18.666
-lr_schedule_constant           ,   14.0756,    4.198,    3.353, 0.002,    5.639,   22.512
-lr_schedule_cosine             ,   18.3416,    4.264,    4.302, 0.000,    9.773,   26.910
-lr_schedule_exponential        ,   13.4449,    3.540,    3.798, 0.000,    6.331,   20.559
-lr_schedule_polynomial         ,   13.4742,    4.595,    2.933, 0.005,    4.241,   22.707
-partitioning_60-20-20          ,   23.2398,    4.388,    5.296, 0.000,   14.422,   32.058
-partitioning_70-15-15          ,   14.2835,    3.615,    3.951, 0.000,    7.018,   21.549
-partitioning_80-10-10          ,   10.0836,    3.876,    2.601, 0.012,    2.294,   17.873
-partitioning_90-5-5            ,   11.7295,    4.320,    2.715, 0.009,    3.049,   20.410
-optimizer_Adam                 ,   19.8469,    3.303,    6.008, 0.000,   13.209,   26.485
-optimizer_AdamW                ,   17.7858,    4.252,    4.183, 0.000,    9.241,   26.330
-optimizer_RMSProp              ,    8.5544,    4.706,    1.818, 0.075,   -0.902,   18.011
-optimizer_SGD                  ,   13.1493,    3.982,    3.302, 0.002,    5.147,   21.151
-optimizer_momentum_0.0         ,    8.6011,    3.882,    2.216, 0.031,    0.800,   16.402
-optimizer_momentum_0.5         ,   14.5656,    4.548,    3.203, 0.002,    5.426,   23.705
-optimizer_momentum_0.9         ,   18.9943,    3.456,    5.495, 0.000,   12.048,   25.940
-optimizer_momentum_0.99        ,   17.1754,    4.356,    3.943, 0.000,    8.422,   25.929
-internal_None                  ,   19.6883,    4.160,    4.732, 0.000,   11.328,   28.049
-internal_jit_compilation       ,   15.7905,    4.553,    3.468, 0.001,    6.641,   24.940
-internal_post_quantization     ,   12.5658,    4.201,    2.991, 0.004,    4.124,   21.008
-internal_pre_quantization      ,   11.2917,    8.726,    1.294, 0.202,   -6.244,   28.827
-precision_float16              ,   23.3301,    4.588,    5.085, 0.000,   14.111,   32.549
-precision_float32              ,   22.4291,    5.051,    4.440, 0.000,   12.278,   32.580
-precision_float64              ,   21.4266,    3.643,    5.882, 0.000,   14.106,   28.747
-precision_global_policy_float16,   -7.8495,    3.504,   -2.240, 0.030,  -14.891,   -0.808
-Omnibus:      , 0.057,  Durbin-Watson:     ,   1.908
-Prob(Omnibus):, 0.972,  Jarque-Bera (JB):  ,   0.210
-Skew:         ,-0.041,  Prob(JB):          ,   0.900
-Kurtosis:     , 2.763,  Cond. No.          ,2.63e+16
+preprocessing_None             ,    0.5419,    0.198,    2.738, 0.009,    0.144,    0.940
+preprocessing_minmax           ,    0.2011,    0.235,    0.855, 0.397,   -0.272,    0.674
+preprocessing_robust_scaling   ,    0.5264,    0.261,    2.017, 0.049,    0.002,    1.051
+preprocessing_standardization  ,    0.2942,    0.271,    1.085, 0.283,   -0.251,    0.839
+augmentation_None              ,    0.1657,    0.223,    0.741, 0.462,   -0.283,    0.615
+augmentation_cutmix            ,    0.2698,    0.241,    1.122, 0.267,   -0.214,    0.753
+augmentation_mixup             ,    0.5425,    0.212,    2.555, 0.014,    0.116,    0.969
+augmentation_random            ,    0.5856,    0.249,    2.356, 0.023,    0.086,    1.085
+batch_size_4                   ,    6.5146,    0.246,   26.450, 0.000,    6.020,    7.010
+batch_size_32                  ,   -1.2714,    0.236,   -5.396, 0.000,   -1.745,   -0.798
+batch_size_64                  ,   -1.6120,    0.209,   -7.699, 0.000,   -2.033,   -1.191
+batch_size_128                 ,   -2.0676,    0.256,   -8.077, 0.000,   -2.582,   -1.553
+lr_0.00015                     ,    0.1904,    0.227,    0.840, 0.405,   -0.265,    0.646
+lr_0.0008                      ,    0.6091,    0.237,    2.575, 0.013,    0.134,    1.084
+lr_0.00625                     ,    0.4455,    0.208,    2.144, 0.037,    0.028,    0.863
+lr_0.01                        ,    0.3187,    0.250,    1.277, 0.208,   -0.183,    0.820
+lr_schedule_constant           ,    0.1945,    0.235,    0.826, 0.413,   -0.279,    0.668
+lr_schedule_cosine             ,    0.3099,    0.248,    1.251, 0.217,   -0.188,    0.808
+lr_schedule_exponential        ,    0.8238,    0.211,    3.905, 0.000,    0.400,    1.248
+lr_schedule_polynomial         ,    0.2355,    0.263,    0.895, 0.375,   -0.293,    0.764
+partitioning_60-20-20          ,    0.0905,    0.253,    0.357, 0.722,   -0.418,    0.599
+partitioning_70-15-15          ,    0.2741,    0.224,    1.225, 0.226,   -0.175,    0.724
+partitioning_80-10-10          ,    0.6524,    0.199,    3.274, 0.002,    0.252,    1.053
+partitioning_90-5-5            ,    0.5466,    0.257,    2.123, 0.039,    0.029,    1.064
+optimizer_Adam                 ,    0.3701,    0.195,    1.899, 0.063,   -0.022,    0.762
+optimizer_AdamW                ,    0.5108,    0.229,    2.233, 0.030,    0.051,    0.970
+optimizer_RMSProp              ,    0.2901,    0.273,    1.061, 0.294,   -0.259,    0.839
+optimizer_SGD                  ,    0.3925,    0.225,    1.747, 0.087,   -0.059,    0.844
+optimizer_momentum_0.0         ,    0.7469,    0.215,    3.466, 0.001,    0.314,    1.180
+optimizer_momentum_0.5         ,    0.0829,    0.237,    0.349, 0.729,   -0.394,    0.560
+optimizer_momentum_0.9         ,    0.1658,    0.206,    0.806, 0.424,   -0.247,    0.579
+optimizer_momentum_0.99        ,    0.5681,    0.245,    2.323, 0.024,    0.077,    1.060
+internal_None                  ,   -0.5145,    0.250,   -2.057, 0.045,   -1.017,   -0.012
+internal_jit_compilation       ,   -0.9719,    0.269,   -3.611, 0.001,   -1.513,   -0.431
+internal_post_quantization     ,   -0.3508,    0.247,   -1.419, 0.162,   -0.847,    0.146
+internal_pre_quantization      ,    3.4008,    0.550,    6.184, 0.000,    2.296,    4.506
+precision_float16              ,    0.5011,    0.283,    1.770, 0.083,   -0.068,    1.070
+precision_float32              ,    0.3920,    0.300,    1.308, 0.197,   -0.210,    0.994
+precision_float64              ,    0.6261,    0.209,    2.995, 0.004,    0.206,    1.046
+precision_global_policy_float16,    0.0444,    0.229,    0.193, 0.848,   -0.417,    0.505
+Omnibus:      ,14.156,  Durbin-Watson:     ,   2.030
+Prob(Omnibus):, 0.001,  Jarque-Bera (JB):  ,  54.543
+Skew:         ,-0.122,  Prob(JB):          ,1.43e-12
+Kurtosis:     , 7.038,  Cond. No.          ,1.72e+16
 
 Notes:
 [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-[2] The smallest eigenvalue is 3.09e-31. This might indicate that there are
+[2] The smallest eigenvalue is 7.15e-31. This might indicate that there are
 strong multicollinearity problems or that the design matrix is singular.
