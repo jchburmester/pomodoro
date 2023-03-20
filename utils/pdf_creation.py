@@ -15,13 +15,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from decimal import Decimal
 
-from utils.analysis import get_best_5_runs, get_baseline
+from analysis import get_best_5_runs, get_baseline
 
 
 """
 - heatmap function
-- credits: https://github.com/jorisschellekens/borb-examples#321-fixedcolumnwidthtable
 - test execution from main.py
+- statt number of parameters, plot seconds per epoch
 """
 
 def create_heatmap(df):
@@ -100,21 +100,31 @@ def create_evaluation_plot(logs, key, title):
     train_acc = logs["accuracy"][1:-1].tolist()
     val_acc = logs["val_accuracy"][1:-1].tolist()
 
-    # plot
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    ax.plot(train_epochs, train_loss, label="Training Loss")
-    ax.plot(train_epochs, val_loss, label="Validation Loss")
-    ax.plot(train_epochs, train_acc, label="Training Accuracy")
-    ax.plot(train_epochs, val_acc, label="Validation Accuracy")
-    ax.set_xlabel("Epochs")
-    ax.set_title(title + " (run number {})".format(key))
+    fig, ax1 = plt.subplots()
+
+    # plot loss
+    ax1.set_ylabel('Loss') 
+    ax1.plot(train_epochs, train_loss, label="Training Loss", color="lightcoral")
+    ax1.plot(train_epochs, val_loss, label="Validation Loss", color="darkred")
+    ax1.tick_params(axis ='y')
+
+    # plot accuracy on different y-axis
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Accuracy') 
+    ax2.plot(train_epochs, train_acc, label="Training Accuracy", color="darkturquoise")
+    ax2.plot(train_epochs, val_acc, label="Validation Accuracy", color="midnightblue")
+    ax2.tick_params(axis ='y')
+
+    # combined legend
+    h1, l1 = ax1.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax1.legend(h1+h2, l1+l2, loc='center right')
+
+    ax1.set_xlabel('Epochs')
+    ax1.set_title(title + " (run number {})".format(key))
     # plot only every second xtick for better visibility
-    ax.set_xticks(train_epochs[::2])
-    ax.set_xticklabels(train_epochs[::2], visible=True)
-    # make y ticks invisible
-    ax.set_yticklabels(train_loss, visible=False)
-    ax.legend()
+    ax1.set_xticks(train_epochs[::2])
+    ax1.set_xticklabels(train_epochs[::2], visible=True)
 
     plot = plt.gcf()
 
@@ -175,12 +185,15 @@ def read_logs_with_pd(path_to_csv_file):
         # Opening the csv file, convert into dictionary, and append to list
         for path in path_to_csv_file:
             df = pd.read_csv(path)
+            # interpolate missing values
+            df = df.interpolate()
             logs.append(df)
         
         return logs
 
     else:
         df = pd.read_csv(path_to_csv_file)
+        df = df.interpolate()
 
         return df
 
@@ -517,7 +530,7 @@ def main(acc, gpu, eff, base):
     Creates PDF file. The PDF will contain:
     1) Tables with measures for the five best runs in each category
     2) Tables with the parameters of the best run in each category
-    3) Acc, loss and gpu plots for the best run in each category
+    3) Acc, loss and gpu plots for the best efficiency run
 
     Parameters:
     ----------
@@ -579,6 +592,9 @@ def main(acc, gpu, eff, base):
     document.add_page(page)
     layout = SingleColumnLayout(page)
 
+    # display credits
+    layout.add(Paragraph("PDF creation inspired by: https://github.com/jorisschellekens/borb-examples#321-fixedcolumnwidthtable", font="Helvetica", font_size=Decimal(8)))
+
     # displays information about the five best runs according to respective category
     create_table_fivebest(layout, acc_keys, num_params_acc, num_params_base, base['logs'], logs_acc1, logs_acc2, logs_acc3, logs_acc4, logs_acc5, mode="acc")
     create_table_fivebest(layout, gpu_keys, num_params_gpu, num_params_base, base['logs'], logs_gpu1, logs_gpu2, logs_gpu3, logs_gpu4, logs_gpu5, mode="gpu")
@@ -590,11 +606,7 @@ def main(acc, gpu, eff, base):
     create_table_params(layout, first_eff_params, first_eff_values, eff_keys[0], mode="eff")
     create_table_params(layout, base_params, base_values, mode="base")
 
-    # for the best run of each category, visualisation of acc, loss and gpu per epoch. Plot GPU in extra plot because of different x- and y-value range
-    layout.add(Chart(create_evaluation_plot(logs_acc1, acc_keys[0], title="Best accuracy run"), width=Decimal(400), height=Decimal(256)))
-    layout.add(Chart(create_gpu_plot(logs_acc1, acc_keys[0], title="Best accuracy run, GPU values"), width=Decimal(400), height=Decimal(256)))
-    layout.add(Chart(create_evaluation_plot(logs_gpu1, gpu_keys[0], title="Best GPU run"), width=Decimal(400), height=Decimal(256)))
-    layout.add(Chart(create_gpu_plot(logs_gpu1, gpu_keys[0], title="Best GPU run, GPU values"), width=Decimal(400), height=Decimal(256)))
+    # for the best efficiency run, visualisation of acc, loss and gpu per epoch. Plot GPU in extra plot because of different x- and y-value range
     layout.add(Chart(create_evaluation_plot(logs_eff1, eff_keys[0], title="Best efficiency run"), width=Decimal(400), height=Decimal(256)))
     layout.add(Chart(create_gpu_plot(logs_eff1, eff_keys[0], title="Best efficiency run, GPU values"), width=Decimal(400), height=Decimal(256)))
 
