@@ -79,6 +79,7 @@ def get_best_5_runs(mode):
 
     metrics = []
     top_5_runs_dict = {}
+    avg_time_per_epoch = []
 
     for run in os.listdir(os.path.join(parent_dir, 'runs')):
         if run == '0':
@@ -93,6 +94,10 @@ def get_best_5_runs(mode):
         time = time[1:].reset_index(drop=True)
         power_draw = power_draw[1:].reset_index(drop=True)
         total_power_draw = (power_draw * time).mean()/3600
+
+        # store average time per epoch
+        avg_time = round(time.mean(), 2)
+        avg_time_per_epoch.append(avg_time)
 
         if mode == 'acc':
             metrics.append(logs['val_accuracy'].iloc[-2])
@@ -112,14 +117,11 @@ def get_best_5_runs(mode):
     elif mode == 'eff':
         top_5 = metrics.nlargest(5).index
 
-    # get average time per epoch from runs_summary.csv
-    time = create_summary_csv(mode='get_time')
-
     # Store best 5 runs in dictionary
     for run in top_5:
         top_5_runs_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
                                   'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml'),
-                                  'time': time.at[run, 'avg_seconds_per_epoch']}
+                                  'time': avg_time_per_epoch[run]}
     
     return top_5_runs_dict
 
@@ -204,12 +206,7 @@ def get_above_80():
 
 def create_summary_csv(mode=None):
     """
-    Extract the parameters and logs for each run. Returns the summary if mode == 'get_time', else stores summary in a CSV file.
-
-    Parameters:
-    ----------
-        mode : str or None
-            if 'get_time', returns df
+    Extract the parameters and logs for each run and stores summary in a CSV file.
     """
     
     runs_dir = "./runs/"
@@ -253,15 +250,10 @@ def create_summary_csv(mode=None):
     # Convert the data to a DataFrame and save it to a CSV file
     df = pd.DataFrame(data)
     df.to_csv("runs_summary.csv", index=False)
-
-    # return dataframe for information extraction
-    if mode == 'get_time':
-        return df
     
-    # else generate summary statistics using pandas_profiling
-    else:
-        profile = ProfileReport(df, title="Runs Summary Report")
-        profile.to_file(output_file="runs_summary_report.html")
+    # generate summary statistics using pandas_profiling
+    profile = ProfileReport(df, title="Runs Summary Report")
+    profile.to_file(output_file="runs_summary_report.html")
 
 
 #####################################################################################
