@@ -20,7 +20,7 @@ parent_dir = os.path.dirname(os.getcwd())
 #####################################################################################
 
 # Opening the yaml file
-with open('./config.yaml', 'r') as stream:
+with open('./utils/config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
@@ -112,10 +112,14 @@ def get_best_5_runs(mode):
     elif mode == 'eff':
         top_5 = metrics.nlargest(5).index
 
+    # get average time per epoch from runs_summary.csv
+    time = create_summary_csv(mode='get_time')
+
     # Store best 5 runs in dictionary
     for run in top_5:
         top_5_runs_dict[run+1] = {'logs': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'logs.csv'),
-                                  'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml')}
+                                  'parameters': os.path.join(parent_dir, 'runs', str(run+1).zfill(3), 'parameters.yaml'),
+                                  'time': time.at[run, 'avg_seconds_per_epoch']}
     
     return top_5_runs_dict
 
@@ -198,9 +202,14 @@ def get_above_80():
     return df
 
 
-def create_summary_csv():
+def create_summary_csv(mode=None):
     """
-    Extract the parameters and logs for each run and stores them in a CSV file
+    Extract the parameters and logs for each run. Returns the summary if mode == 'get_time', else stores summary in a CSV file.
+
+    Parameters:
+    ----------
+        mode : str or None
+            if 'get_time', returns df
     """
     
     runs_dir = "./runs/"
@@ -245,9 +254,14 @@ def create_summary_csv():
     df = pd.DataFrame(data)
     df.to_csv("runs_summary.csv", index=False)
 
-    # Generate summary statistics using pandas_profiling
-    profile = ProfileReport(df, title="Runs Summary Report")
-    profile.to_file(output_file="runs_summary_report.html")
+    # return dataframe for information extraction
+    if mode == 'get_time':
+        return df
+    
+    # else generate summary statistics using pandas_profiling
+    else:
+        profile = ProfileReport(df, title="Runs Summary Report")
+        profile.to_file(output_file="runs_summary_report.html")
 
 
 #####################################################################################
