@@ -13,7 +13,7 @@ from matplotlib.colors import ListedColormap
 
 # Set parent directory
 parent_dir = os.path.dirname(os.getcwd())
-
+parent_dir = os.getcwd()
 
 #####################################################################################
 ############################ Loading data ###########################################
@@ -310,8 +310,9 @@ def gpu_per_parameter():
             del parameters['n_parameters']
             del parameters['test_accuracy']
 
-            df = df.append({'parameters': parameters, 'total_power_draw': total_power_draw, 'val_accuracy': acc, 'run_id': id}, ignore_index=True)
-
+            # df = df.append({'parameters': parameters, 'total_power_draw': total_power_draw, 'val_accuracy': acc, 'run_id': id}, ignore_index=True)
+            df = pd.concat([df, pd.DataFrame({'parameters': [parameters], 'total_power_draw': [total_power_draw], 'val_accuracy': [acc], 'run_id': [id]})], ignore_index=True)
+            
         except:
             print('Error in run: ', run)
 
@@ -545,6 +546,7 @@ if __name__ == '__main__':
     # create_heatmap(get_above_80(), para_np)
     #plot_triplets(gpu_p_p)
     _, _, best_run = gpu_per_parameter()
+    print(best_run)
      #corr()
     #plot_distributions()
     #pass

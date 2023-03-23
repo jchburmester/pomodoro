@@ -41,9 +41,14 @@ parser.add_argument('--epochs', type=int, default=1, help='number of epochs')
 parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50')
 parser.add_argument('--seed', type=int, default=22, help='seed for the random number generator')
 parser.add_argument('--report', action='store_true', help='argument for creating a training report')
+parser.add_argument('--debug', action='store_true', help='argument for debugging')
 
 # Parse the arguments
 args = parser.parse_args()
+
+# Debugging
+if args.debug:
+    DEBUG = True
 
 #####################################################################################
 ############################ Initialise Seed ########################################
@@ -64,13 +69,13 @@ if args.baseline:
 # Run training with final parameters
 if args.final:
 
+    parameters = analysis()
+    
     if DEBUG:
         print('Final training run...')
+        print('Parameters:', parameters)
 
-    parameters = {'preprocessing': 'robust_scaling', 'augmentation': 'mixup', 'batch_size': '32', 'lr': '0.00015', 'lr_schedule': 'exponential', 
-    'partitioning': '90-5-5', 'optimizer': 'RMSProp', 'optimizer_momentum': '0.0', 'internal': 'jit_compilation', 'precision': 'global_policy_float16'}
-
-    #parameters = analysis()
+    exit()
 
 # Run training with random parameter configuration
 else:
