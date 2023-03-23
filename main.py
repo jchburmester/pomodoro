@@ -75,8 +75,6 @@ if args.final:
         print('Final training run...')
         print('Parameters:', parameters)
 
-    exit()
-
 # Run training with random parameter configuration
 else:
     parameters = random_config()
