@@ -37,7 +37,7 @@ parser = argparse.ArgumentParser(description='Configuration for the training of 
 # Parsing arguments if required in the shell pipeline
 parser.add_argument('--baseline', action='store_true', help='argument for training the model with no or the most basic parameters')
 parser.add_argument('--final', action='store_true', help='argument for training the model with the final parameters')
-parser.add_argument('--epochs', type=int, default=1, help='number of epochs')
+parser.add_argument('--epochs', type=int, default=50, help='number of epochs')
 parser.add_argument('--model', type=str, default='resnet50', help='model to train; options: resnet50')
 parser.add_argument('--seed', type=int, default=22, help='seed for the random number generator')
 parser.add_argument('--report', action='store_true', help='argument for creating a training report')
