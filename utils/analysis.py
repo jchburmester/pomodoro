@@ -13,14 +13,15 @@ from matplotlib.colors import ListedColormap
 
 # Set parent directory
 parent_dir = os.path.dirname(os.getcwd())
-parent_dir = os.getcwd()
+#parent_dir = os.getcwd()
+
 
 #####################################################################################
 ############################ Loading data ###########################################
 #####################################################################################
 
 # Opening the yaml file
-with open('./utils/config.yaml', 'r') as stream:
+with open('./config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
@@ -181,8 +182,8 @@ def get_above_80():
 
     # Get all runs and sort them by their best validation accuracy
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
-    all_runs.sort(key=lambda x: read_logs_with_pd(os.path.join(parent_dir, 'runs', x, 'logs.csv'))['val_accuracy'].iloc[-2], reverse=True)
-    all_runs = [run for run in all_runs if read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2] > 0.80]
+    #all_runs.sort(key=lambda x: read_logs_with_pd(os.path.join(parent_dir, 'runs', x, 'logs.csv'))['val_accuracy'].iloc[-2], reverse=True)
+    #all_runs = [run for run in all_runs if read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2]]
 
     # Store in the dataframe the parameters and power draw for each run
     for run in all_runs:
@@ -192,9 +193,15 @@ def get_above_80():
             run_parameters_np = run_parameters_np[1:-3]
 
             result = [any(x in s for x in run_parameters_np) for s in para_np_array]
-            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
+            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W']
+            time = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['time']
+            time = pd.to_datetime(time)
+            time = time.diff().dt.total_seconds()
+            time = time[1:].reset_index(drop=True)
+            power_draw = power_draw[1:].reset_index(drop=True)
+            total_power_draw = (power_draw * time).mean()/3600
             val_accuracy = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2]
-            df = df.append({'run': run, 'val_accuracy': val_accuracy, 'parameters': result, 'power_draw': power_draw}, ignore_index=True)
+            df = df.append({'run': run, 'val_accuracy': val_accuracy, 'parameters': result, 'power_draw': total_power_draw}, ignore_index=True)
         except:
             print('Error in run: ', run)
 
@@ -471,12 +478,20 @@ def create_heatmap(df, para_np):
     Creating a heatmap of the selected runs
     """
 
+    # drop the first and the last run
+    df = df.drop([0, len(df)-1])
+
+    # for each row calculate an energy efficiency score dividing the accuracy by the power draw, store this in a new column
+    df['energy_efficiency'] = df['val_accuracy'] / df['power_draw']
+
+    # sort this dataframe by the energy efficiency score
+    df = df.sort_values(by=['energy_efficiency'], ascending=False)
+
     # Get all parameter titles
     para_np_list = np.array(para_np).flatten().tolist()
 
     # access only the parameters column in the dataframe
     df_new = df['parameters'].apply(pd.Series)
-
     df_array = df_new.to_numpy(dtype=float)
     
     # Create a heatmap
@@ -485,20 +500,22 @@ def create_heatmap(df, para_np):
     fig, ax = plt.subplots(figsize=(16, 12))
     im = ax.imshow(df_array, cmap=cmap, aspect='auto')
 
-    plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
+    plt.subplots_adjust(left=0.1, right=0.9, bottom=0.4, top=0.95, wspace=0.2, hspace=0.6)
 
     # Title and labels
     ax.set_ylabel('') # Remove y-axis label
     ax.set_xticks(np.arange(len(para_np_list)))
     ax.set_xticklabels(para_np_list, rotation=90)
-    ax.set_title('Parameter heatmap for all runs above 75% accuracy', fontsize=16)
-    ax.set_yticks(np.arange(len(df['val_accuracy'])))
-    ax.set_yticklabels(df['val_accuracy'], rotation=0)
-    ax2 = ax.twinx()
-    ax2.set_yticks(np.arange(len(df['power_draw'])))
-    ax2.set_yticks(ax.get_yticks())
-    ax2.set_yticklabels([round(x, 2) for x in df['power_draw']], rotation=0)
-    ax2.tick_params(axis='y')
+    ax.set_title('Parameter heatmap', fontsize=16)
+
+    # Set y axis label
+    ax.set_yticks(np.arange(0, len(df_array), 10))
+    ax.set_yticklabels(df['energy_efficiency'].iloc[::10].round(3), fontsize=12)
+    ax.set_ylabel('Energy efficiency score', fontsize=14)
+    ax.tick_params(axis='y', which='major', pad=15)
+
+    # Store as image
+    plt.savefig('heatmap.png', dpi=300)
 
     plt.show()
 
@@ -543,10 +560,10 @@ def analysis():
 
 if __name__ == '__main__':
     # create_summary_csv()
-    # create_heatmap(get_above_80(), para_np)
+    create_heatmap(get_above_80(), para_np)
     #plot_triplets(gpu_p_p)
-    _, _, best_run = gpu_per_parameter()
-    print(best_run)
+    #_, _, best_run = gpu_per_parameter()
+    #print(best_run)
      #corr()
     #plot_distributions()
     #pass
