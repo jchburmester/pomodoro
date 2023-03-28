@@ -441,18 +441,25 @@ def plot_distributions():
     all_runs = os.listdir(os.path.join(parent_dir, 'runs'))
 
     for run in all_runs:
-        try:
-            power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W'].mean()
-            accuracy = get_parameters(run)['test_accuracy']
-            df = df.append({'power_draw': power_draw, 'accuracy': accuracy}, ignore_index=True)
+        power_draw = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['gpu_power_W']
+        accuracy = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['val_accuracy'].iloc[-2]
+        time = read_logs_with_pd(os.path.join(parent_dir, 'runs', run, 'logs.csv'))['time']
+        time = pd.to_datetime(time)
+        time = time.diff().dt.total_seconds()
+        time = time[1:].reset_index(drop=True)
+        power_draw = power_draw[1:].reset_index(drop=True)
+        total_power_draw = (power_draw * time).mean()/3600
 
-        except:
-            print('Error in run: ', run)
+        df = df.append({'power_draw': total_power_draw, 'accuracy': accuracy}, ignore_index=True)
+
+    # Drop the first and the last run
+    df = df.drop([0, len(df)-1])
 
     # Plot distributions
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-    sns.violinplot(y='power_draw', data=df, ax=ax1, color='lightgrey', inner='point')
-    sns.violinplot(y='accuracy', data=df, ax=ax2, color='lightgrey', inner='point')
+    # Limit the violins to the range of the data
+    sns.violinplot(y='power_draw', data=df, ax=ax1, color='lightgrey', inner='point', cut=0)
+    sns.violinplot(y='accuracy', data=df, ax=ax2, color='lightgrey', inner='point', cut=0)
     plt.subplots_adjust(left=0.1, right=0.9, bottom=0.25, top=0.9, wspace=0.2, hspace=0.6)
     
     # Labels
@@ -468,7 +475,13 @@ def plot_distributions():
     ax1.axhline(df['power_draw'].median(), color='black', linestyle='dashed', linewidth=1)
     ax2.axhline(df['accuracy'].mean(), color='red', linestyle='dashed', linewidth=1)
     ax2.axhline(df['accuracy'].median(), color='black', linestyle='dashed', linewidth=1)
-    
+
+    # Label the means and medians
+    ax1.text(0.5, df['power_draw'].mean() + 0.01, 'Mean', horizontalalignment='center', size='medium', color='red', weight='semibold')
+    ax1.text(0.5, df['power_draw'].median() + 0.01, 'Median', horizontalalignment='center', size='medium', color='black', weight='semibold')
+    ax2.text(0.5, df['accuracy'].mean() + 0.01, 'Mean', horizontalalignment='center', size='medium', color='red', weight='semibold')
+    ax2.text(0.5, df['accuracy'].median() + 0.01, 'Median', horizontalalignment='center', size='medium', color='black', weight='semibold')
+
     # Save the plot
     plt.savefig('distributions.png', dpi=300)
 
@@ -560,10 +573,10 @@ def analysis():
 
 if __name__ == '__main__':
     # create_summary_csv()
-    create_heatmap(get_above_80(), para_np)
+    #create_heatmap(get_above_80(), para_np)
     #plot_triplets(gpu_p_p)
     #_, _, best_run = gpu_per_parameter()
     #print(best_run)
      #corr()
-    #plot_distributions()
+    plot_distributions()
     #pass
