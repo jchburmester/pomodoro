@@ -6,7 +6,6 @@ CHANGED (from last years implementation):
 - Batch Normalization Epsilon from default (0.001) --> 1.001e-5 (see tf.keras.ResNet50)
 - More modularity (last year: one big class, now: blocks and ResNet50 class)
 
-(- other difference: tf.keras.ResNet50 is initialized with ImageNet weights and 1000 classes per default, but we called with no pre-training so difference negligible)
 """
 
 import tensorflow as tf
@@ -16,7 +15,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 def load_resnet50(classes, input_shape):
     model = ResNet50(num_classes=classes, input_shape=input_shape)
     return model
-
 
 # ---------------------------- ResNet50 ----------------------------
 
@@ -40,6 +38,15 @@ def load_resnet50(classes, input_shape):
 
 class Block(tf.keras.Model):
     def __init__(self, input_channels, output_channels, identity_block=False, identity_strides=1):
+        """ Class for the blocks of the ResNet50 model.
+        
+        Args:
+            input_channels (int): Number of input channels.
+            output_channels (int): Number of output channels.
+            identity_block (bool): If True, the block is an identity block.
+            identity_strides (int): Stride for the identity shortcut.
+        """
+
         super(Block, self).__init__()
         self.conv1 = tf.keras.layers.Conv2D(input_channels, (1, 1), strides=identity_strides)
         self.conv2 = tf.keras.layers.Conv2D(input_channels, (3, 3), padding='same')
@@ -54,6 +61,7 @@ class Block(tf.keras.Model):
         self.bn4 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
 
     def call(self, input):
+        """ Forward pass of the block. """
 
         x = self.conv1(input)
         x = self.bn1(x)
@@ -92,6 +100,12 @@ class Block(tf.keras.Model):
 
 class ResNet50(tf.keras.Model):
     def __init__(self, num_classes, input_shape):
+        """ Class for the ResNet50 model.
+        
+        Args:
+            num_classes (int): Number of classes.
+            input_shape (tuple): Shape of the input.
+        """
         super(ResNet50, self).__init__()
         self.conv1 = tf.keras.layers.Conv2D(input_shape=input_shape, filters=64, kernel_size=(7, 7), strides=2, padding='same')
         self.bn1 = tf.keras.layers.BatchNormalization(epsilon=1.001e-5)
@@ -118,6 +132,7 @@ class ResNet50(tf.keras.Model):
         self.fc = tf.keras.layers.Dense(num_classes, activation='softmax')
 
     def call(self, input):
+        """ Forward pass of the model. """
         x = self.conv1(input)
         x = self.bn1(x)
         x = tf.nn.relu(x)
