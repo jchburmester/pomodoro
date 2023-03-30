@@ -1,6 +1,5 @@
 """ 
 Testing file for the new callback
-Pomodoro, 4.12.2022
 """
 import sys
 sys.path.append('')
@@ -12,7 +11,9 @@ from models.resnet50 import load_resnet50
 import tensorflow as tf
 from tensorflow.python.ops.numpy_ops import np_config
 np_config.enable_numpy_behavior()
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Import the callback
 from utils.callback import SMICallback
 
 # Load the mnist dataset
