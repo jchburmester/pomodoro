@@ -6,8 +6,8 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Set the font size and line width
-font_size = 8
-line_width = 1
+font_size = 12
+line_width = 2
 
 # Initialize lists to store accuracy and loss values
 all_accuracies = []
@@ -38,7 +38,7 @@ for i in range(1, 101):
                 all_losses.append(losses)
 
 # Create and save the accuracy plot
-plt.figure(figsize=(5, 5))
+plt.figure(figsize=(12, 8))
 plt.rcParams.update({"font.size": font_size})
 for idx, accuracies in enumerate(all_accuracies):
     plt.plot(accuracies, label=f"Run {idx+1}", linewidth=line_width)
@@ -50,7 +50,7 @@ plt.savefig("report/media/accuracy_plot.png", dpi=300)
 plt.show()
 
 # Create and save the loss plot
-plt.figure(figsize=(5, 5))
+plt.figure(figsize=(12, 8))
 plt.rcParams.update({"font.size": font_size})
 for idx, losses in enumerate(all_losses):
     plt.plot(losses, label=f"Run {idx+1}", linewidth=line_width)
