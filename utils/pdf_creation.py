@@ -76,7 +76,7 @@ def create_gpu_plot(logs, key, title):
 
 def create_evaluation_plot(logs, key, title):
     """
-    For single run, visualisation of loss, accuracy per epoch.
+    For single run, visualization of loss, accuracy per epoch.
 
     Parameters:
     ----------
@@ -594,7 +594,7 @@ def main(acc, gpu, eff, base):
     create_table_params(layout, first_gpu_params, first_gpu_values, gpu_keys[0], mode="gpu")
     create_table_params(layout, first_eff_params, first_eff_values, eff_keys[0], mode="eff")
 
-    # for the best efficiency run, visualisation of acc, loss and gpu per epoch. Plot GPU in extra plot because of different x- and y-value range
+    # for the best efficiency run, visualization of acc, loss and gpu per epoch. Plot GPU in extra plot because of different x- and y-value range
     layout.add(Chart(create_evaluation_plot(logs_eff1, eff_keys[0], title="Best efficiency run"), width=Decimal(400), height=Decimal(256)))
     layout.add(Chart(create_gpu_plot(logs_eff1, eff_keys[0], title="Best efficiency run, GPU values"), width=Decimal(400), height=Decimal(256)))
 
