@@ -29,6 +29,7 @@ from utils.preprocessing import Preprocessing
 from utils.mixup import mixup
 from utils.cutmix import cutmix
 from models.resnet50 import load_resnet50 # self implemented resnet50
+from models.convnext import load_convnext # self implemented convnext
 from utils.callback import SMICallback
 
 # Start a parser with the arguments
@@ -316,6 +317,8 @@ else:
 # Loading resnet50 model
 if args.model == 'resnet50':
     model = load_resnet50(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4])
+elif args.model == 'convnext':
+    model = load_convnext(classes=100, input_shape=data.as_numpy_iterator().next()[0].shape[1:4])
 
 else: 
     print('Model not found')
