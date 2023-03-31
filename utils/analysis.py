@@ -14,8 +14,8 @@ from matplotlib.colors import ListedColormap
 #from pandas_profiling import ProfileReport
 
 # Set parent directory
-parent_dir = os.path.dirname(os.getcwd())
-#parent_dir = os.getcwd()
+#parent_dir = os.path.dirname(os.getcwd())
+parent_dir = os.getcwd()
 
 
 #####################################################################################
@@ -23,7 +23,7 @@ parent_dir = os.path.dirname(os.getcwd())
 #####################################################################################
 
 # Opening the yaml file
-with open('./config.yaml', 'r') as stream:
+with open('utils/config.yaml', 'r') as stream:
 
     try:
         # Converting yaml document to python object
