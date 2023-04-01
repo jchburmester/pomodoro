@@ -1,10 +1,10 @@
-# Hyperparameter Optimization for computationally efficient Deep Learning Training
+# Computationally Efficient Deep Learning Training: Investigating the Impact of Hyperparameters
 
 We built a streamlined training pipeline to objectively test the energy consumption of training a ResNet-50 model on image classification in different scenarios. We selected three preprocessing techniques and seven model / hyperparameter optimization approaches that are either switched on or off during training. As part of the project, we built an open-source package that allows users to import `SMICallback()` (of type `tf.keras.callbacks.Callback`) which logs GPU power draw, next to training loss, and accuracy in csv files for `tf.keras.Sequential` models. 
 
 The paper report with detailed result descriptions of this project can be found here:
 
-LINK TO PAPER REPORT
+https://github.com/jchburmester/pomodoro/blob/main/report/IANNwTF_Project_Report_Group41.pdf
 
 A from this research resulting python package that tracks the training efficiency of models using the `SMICallback()` used in `utils/callback.py` can be downloaded here: 
 
